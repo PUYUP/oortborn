@@ -1,0 +1,13 @@
+__pycache__/
+/__pycache__
+__pycache__
+*.pyc
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+/.metadata/
+**/media/**
+DEPLOYMENT
+NOTE
+NGINX
+DAPHNE

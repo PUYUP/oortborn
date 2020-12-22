@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "daftar-belanja-001",
+  "private_key_id": "f1bd6b1f4d9a1b1bba580c2ae5ce65560e3c6ea2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDlouVfa0q0M30y\nPDo6aNg6qff0SZ0IBo6ZwQSIfFgnlk77CNKUih4+zETiDhW0x9q+VpN0D/hFkX5H\n/gPVlPPuNX/MytVQy0YNInlvGVveU5JUyiKJ2DBk9LhK4cpTat0SrabAbuPS9Hhj\nQ6UEGb0ZLZUbNUp75SwPKhw6nRx7NYzwUw3R28oQM3ljz/04zRvXAW+1PS9rAgau\nZ/vAqnF+IADIhU9ip0epASrcIvCYkEygQ/Bm69TMiHWmYOYMWsZWn8teX9u74HhH\nAfg5Zb8UZPfKAxQtEgWFaIMFQX4zqGbuK3tBm8ghnWdOdEGQ6iyUeAJQjP8zxIa7\nlg2029whAgMBAAECggEAXKYb6CMoOUs63G1LSuypLQYNiey3ZBkNKMCk/RI6GQK+\na+8z0wVkzY5pzlDDdjRaL4hLpryYvSzF5/L3BhG6VyYToYNGjHnvEfaSSv5OwAU0\n2WvSgo4MfHb18hRmJsDLYDFawXIcDi1fcyFEL0LZNhLbgWY/XnxoidfCGu3vo0+E\nYl+auFtTo2s/kRpjxBKbCvOH5yFJmm+fgMQNO5auCqOR1iN3UK9WV/vhzAc4/m1l\nZZhLOQwcC+qUHyC0DbHLuT/eEqlzprO23hdY5RTMCU0RoxpdIJuW09tN2ku6lIMu\n+HVQA/8BQQl7sSpWlWw1AkIjxqgz3jOP6vCalhPoZwKBgQD+s3NuZMkaca6bTc8j\nD2f3GaivP+Z4Qx6YP5GcJj7+vJDIHIQXibCC21xm9PTQ9iHf9wT4duPMWVhwOA8J\nfOAOQ7JvlDV98AaS5RJtPKGVOl/6THoDuBN8VImKKOew6ZTxMApjLjCTKCbPxgkv\nDqsPtmWt9rhTPZuNh7Xtuc4CRwKBgQDmzrgyoLXMog8M6cXN8ZX8oKnuCdmf/rH5\nBgC8aAC625ts6t2NEJgDYNBPoEfQWqHu3cDK+ObHtnILqL273vuGnUEaQizmZQXI\nYL9kEAV68yq0v+2RfGiNO8ps572Wi+FcpDGnqbQbq7nm7nVxomCgdk+Tby8eTw3A\nhpEt/4M6VwKBgQCBvxZ5UPwk7W5eDNgM6ycx+C82/x0/fCmUsyVQ3ybOC27Rkb00\nZF63ellq1TP1UrzU43fzvlSy33yuxc/bLHLSsWevcVeCjQg8QlcNsIo7g54q2lR5\nmobKmiHqcIX+WC8YYjmYZoo2HIkQ5Lf+8cDwYyEO6pThSov4H/7sV+96twKBgQCh\nxRXZdka17Ig79sXLOJ51eG5iBslfmHZJIen2I7cPQMjJKDysmIrTI1Id3Ss4X63L\n6+Uq3hVyuO9qOJTzTrBgg2uT6fnqabgJ37WFfq04paKzGSp7pATrqJKSjkKVd+k2\ns2aSKyGvm0crEsuCH9s13Had0Xnm9mWfITI0WTgy9QKBgFfkAlp6yePPGHxojt78\ntk8danhsyCb5yas1lV+UjgRhax5XSV3/DO2gYdmgUz+kOaETUZ6jpArvFcbkPfcK\nx2f5RZ4RqhGM199OZ3+KNpkX4k+mdsZNtCKrB2cuvvulMlFqOrijcJeGkuq0X4CT\nq81tkM/Y6zSbsD58hKe9hkvZ\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-2k0di@daftar-belanja-001.iam.gserviceaccount.com",
+  "client_id": "114642320181346200481",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-2k0di%40daftar-belanja-001.iam.gserviceaccount.com"
+}
