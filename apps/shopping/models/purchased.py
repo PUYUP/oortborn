@@ -137,9 +137,11 @@ class AbstractPurchasedStuff(models.Model):
         """
 
         if self.user.uuid != self.current_user.uuid:
-            raise ValidationError({'detail': _("Tidak diizinkan merubah {}".format(self.stuff.name))})
+            is_can_buy = self.share.filter(is_can_buy=True).exists()
+            if not self.share.exists() or not is_can_buy:
+                raise ValidationError({'detail': _("Tidak diizinkan merubah {}".format(self.stuff.name))})
         
-        if self.basket.is_complete and not self.stuff.is_additional:
+        if self.basket.is_complete and not self.stuff.is_additional and self.is_found:
             raise ValidationError({'detail': _("Merubah pembelian {} tidak diperbolehkan".format(self.stuff.name))})
     
     def check_can_delete(self):
