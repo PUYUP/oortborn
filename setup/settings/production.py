@@ -45,13 +45,13 @@ X_FRAME_OPTIONS = 'DENY'
 # Django csrf
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/2.2/ref/csrf/
-CSRF_COOKIE_DOMAIN = 'api.daftarbelanja.com'
+CSRF_COOKIE_DOMAIN = '.daftarbelanja.com'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
-    'api.daftarbelanja.com'
+    '.daftarbelanja.com'
 ]
 
 
