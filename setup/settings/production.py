@@ -50,9 +50,9 @@ CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = [
-    '.daftarbelanja.com'
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     '.daftarbelanja.com'
+# ]
 
 
 # Django CORS
