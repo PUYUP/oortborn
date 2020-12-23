@@ -45,7 +45,7 @@ def handle_upload_attachment(instance, file):
 class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer, serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:share-detail',
                                                lookup_field='uuid', read_only=True)
-    msisdn = serializers.CharField(required=False, source='to_user.account.msisdn')
+    msisdn = serializers.CharField(read_only=True, source='to_user.account.msisdn')
     username = serializers.CharField(required=False, source='to_user.username')
     first_name = serializers.CharField(read_only=True, source='to_user.first_name')
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
