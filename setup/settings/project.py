@@ -10,7 +10,7 @@ from .base import *
 APP_NAME = 'Daftar Belanja'
 PROJECT_URL = 'www.daftarbelanja.com'
 PAGINATION_PER_PAGE = 15
-LOGIN_WITH_JWT = True
+LOGIN_WITH_JWT = False
 
 
 # REGISTRATION REQUIREMENTS
