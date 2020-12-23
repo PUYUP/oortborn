@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import _unicode_ci_compare
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
@@ -11,7 +12,7 @@ from apps.person.utils.constants import VerifyCode_SESSION_FIELDS
 
 validate_username = UnicodeUsernameValidator()
 
-User = get_model('person', 'User')
+User = get_user_model()
 
 
 class CurrentUserDefault:

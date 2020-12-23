@@ -1,11 +1,9 @@
 from django import forms
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
-from utils.generals import get_model
-
-User = get_model('person', 'User')
-
+User = get_user_model()
 
 
 class UserChangeFormExtend(UserChangeForm):

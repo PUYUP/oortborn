@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import transaction, IntegrityError
 from django.db.models import Prefetch
 from django.contrib import messages
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
@@ -249,7 +249,7 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
         msisdn = validated_data.pop('msisdn', None)
 
         try:
-            user = User.objects.create_user(**validated_data)
+            user = get_user_model().objects.create_user(**validated_data)
         except IntegrityError as e:
             raise ValidationError(str(e))
         except TypeError as e:

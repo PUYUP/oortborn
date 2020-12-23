@@ -10,7 +10,7 @@ from django.core.exceptions import (
     MultipleObjectsReturned
 )
 from django.views.decorators.cache import never_cache
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.core.validators import validate_email
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
@@ -40,7 +40,7 @@ from apps.person.utils.permissions import IsCurrentUserOrReject
 from apps.person.utils.auth import validate_username
 from apps.person.utils.constants import PASSWORD_RECOVERY
 
-User = get_model('person', 'User')
+User = get_user_model()
 Account = get_model('person', 'Account')
 Profile = get_model('person', 'Profile')
 VerifyCode = get_model('person', 'VerifyCode')

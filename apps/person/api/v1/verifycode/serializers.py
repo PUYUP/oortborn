@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 from rest_framework.exceptions import NotAcceptable
@@ -10,7 +11,7 @@ from rest_framework.exceptions import NotAcceptable
 from utils.generals import get_model
 from utils.mixin.validators import CleanValidateMixin
 
-User = get_model('person', 'User')
+User = get_user_model()
 VerifyCode = get_model('person', 'VerifyCode')
 
 

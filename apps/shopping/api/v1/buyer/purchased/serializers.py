@@ -1,5 +1,6 @@
 from django.db import transaction
-from apps.shopping.admin import Basket
+from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
 from utils.generals import get_model
@@ -10,7 +11,7 @@ Purchased = get_model('shopping', 'Purchased')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 Basket = get_model('shopping', 'Basket')
 Stuff = get_model('shopping', 'Stuff')
-User = get_model('person', 'User')
+User = get_user_model()
 
 
 class PurchasedListSerializer(serializers.ListSerializer):

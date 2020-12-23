@@ -7,6 +7,7 @@ from django.db.models import Q, Prefetch, Case, When, Value
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import RegexValidator, ValidationError, validate_email
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 from utils.generals import get_model
 from utils.validators import non_python_keyword
@@ -17,7 +18,7 @@ from apps.person.utils.constants import (
     REGISTER_VALIDATION
 )
 
-User = get_model('person', 'User')
+User = get_user_model()
 
 
 class VerifyCodeQuerySet(models.query.QuerySet):
