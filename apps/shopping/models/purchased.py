@@ -165,8 +165,15 @@ class AbstractPurchasedStuff(models.Model):
 
     def save(self, *args, **kwargs):
         if self.metric != NOMINAL and self.amount > 0:
-            self.price = self.amount / int(self.quantity)
+            qty = 1
+
+            if isinstance(self.quantity, int):
+                qty = int(self.quantity)
+            
+            if isinstance(self.quantity, float):
+                qty = float(self.quantity)
     
+            self.price = self.amount / qty
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
