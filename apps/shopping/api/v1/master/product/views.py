@@ -77,7 +77,7 @@ class ProductRateApiView(viewsets.ViewSet):
     def list(self, request, format=None):
         context = {'request': request}
         date = request.query_params.get('date', None)
-        queryset = self.queryset().filter(price__gt=0)
+        queryset = self.queryset().filter(Q(price__gt=0) | Q(amount__gt=0))
 
         if date:
             dt = parser.parse(date)
