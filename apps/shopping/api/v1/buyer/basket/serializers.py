@@ -46,6 +46,7 @@ class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer, serializ
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:share-detail',
                                                lookup_field='uuid', read_only=True)
     msisdn = serializers.CharField(required=False, source='to_user.account.msisdn')
+    username = serializers.CharField(required=False, source='to_user.username')
     first_name = serializers.CharField(read_only=True, source='to_user.first_name')
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     to_user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(), required=False)
@@ -56,14 +57,14 @@ class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer, serializ
         fields = '__all__'
 
     def to_internal_value(self, data):
-        msisdn = data.pop('msisdn', None)
+        username = data.pop('username', None)
         to_user = data.get('to_user', None)
 
-        if msisdn and to_user is None:
+        if username and to_user is None:
             try:
-                to_user = get_user_model().objects.get(account__msisdn=msisdn, account__is_msisdn_verified=True)
+                to_user = get_user_model().objects.get(username=username)
             except ObjectDoesNotExist:
-                raise NotFound(detail=_("Nomor ponsel {} tidak ditemukan".format(msisdn)))
+                raise NotFound(detail=_("User {} tidak ditemukan".format(username)))
 
             data['to_user'] = to_user.uuid
 
