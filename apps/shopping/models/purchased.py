@@ -160,7 +160,6 @@ class AbstractPurchasedStuff(models.Model):
                 self.check_can_update()
             else:
                 self.check_can_add()
-
         return super().clean()
 
     def save(self, *args, **kwargs):
@@ -174,6 +173,9 @@ class AbstractPurchasedStuff(models.Model):
                 qty = float(self.quantity)
     
             self.price = self.amount / qty
+        else:
+            self.price = self.amount
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
