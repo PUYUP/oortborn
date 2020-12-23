@@ -62,7 +62,9 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',
+    'http://localhost:8100',
     'https://api.daftarbelanja.com',
+    'https://app.daftarbelanja.com',
 ]
 
 
