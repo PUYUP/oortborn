@@ -161,7 +161,7 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
 
             # generate email if None
             if self.email is None:
-                data['email'] = '{}{}@daftarbelanja.com'.format(create_unique_id(2), slugify(self.msisdn))
+                data['email'] = '{}{}@daftarbelanja.com'.format(create_unique_id(2), slugify(self.username))
 
             # insert msisdn
             if self.msisdn:
