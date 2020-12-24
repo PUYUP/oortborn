@@ -12,6 +12,7 @@ BOTTLE = 'bottle'
 PIECE = 'piece'
 BUNCH = 'bunch'
 SACK = 'sack'
+BOX = 'box'
 UNIT = 'unit'
 CUP = 'cup'
 CANS = 'cans'
@@ -29,7 +30,8 @@ METRIC_CHOICES = (
     (CUP, _("Cup")),
     (PIECE, _("Buah")),
     (BUNCH, _("Ikat")),
-    (SACK, _("Karung / Sak")),
+    (SACK, _("Karung")),
+    (BOX, _("Kotak")),
     (CANS, _("Kaleng")),
     (UNIT, _("Unit")),
 )

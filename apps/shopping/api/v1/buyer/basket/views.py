@@ -353,7 +353,7 @@ class StuffApiView(viewsets.ViewSet):
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
 
-        if is_history:
+        if is_history == 'true':
             queryset = queryset.filter(purchased_stuff__isnull=False)
 
         # Calculate total ampunt
