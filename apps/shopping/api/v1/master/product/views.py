@@ -76,7 +76,9 @@ class ProductRateApiView(viewsets.ViewSet):
 
     def list(self, request, format=None):
         context = {'request': request}
+        summary = None
         date = request.query_params.get('date', None)
+        keyword = request.query_params.get('keyword')
         queryset = self.queryset().filter(price__gt=0)
 
         if date:
@@ -84,8 +86,6 @@ class ProductRateApiView(viewsets.ViewSet):
             my_datetime = timezone.make_aware(dt, timezone.get_current_timezone())
             queryset = queryset.filter(update_at__range=(my_datetime, my_datetime + datetime.timedelta(days=1)))
 
-        summary = None
-        keyword = request.query_params.get('keyword')
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
             summary = queryset.aggregate(

@@ -95,12 +95,16 @@ class BasketApiView(viewsets.ViewSet):
     def list(self, request, format=None):
         context = {'request': request}
         is_complete = request.query_params.get('is_complete')
+        keyword = request.query_params.get('keyword')
         queryset = self.queryset().order_by('-sort')
 
         if is_complete == 'true':
             queryset = queryset.filter(is_complete=True)
         elif is_complete == 'false':
             queryset = queryset.filter(is_complete=False)
+
+        if keyword:
+            queryset = queryset.filter(name__icontains=keyword)
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
@@ -332,6 +336,8 @@ class StuffApiView(viewsets.ViewSet):
         amount = request.query_params.get('amount', None)
         basket_uuid = request.query_params.get('basket_uuid', None)
         date = request.query_params.get('date', None)
+        keyword = request.query_params.get('keyword', None)
+        is_history = request.query_params.get('is_history', 'false')
 
         queryset = self.queryset()
 
@@ -343,6 +349,12 @@ class StuffApiView(viewsets.ViewSet):
         if amount:
             amount_int = int(amount)
             queryset = queryset.filter(purchased_stuff__amount=amount_int)
+
+        if keyword:
+            queryset = queryset.filter(name__icontains=keyword)
+
+        if is_history:
+            queryset = queryset.filter(purchased_stuff__isnull=False)
 
         # Calculate total ampunt
         summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount'))
