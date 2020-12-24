@@ -39,9 +39,6 @@ class AbstractBasket(models.Model):
         Hanya creator boleh mengedit 
         User lain dengan Share is_can_buy hanya boleh mengupdate field is_complete
         """
-        if self.is_complete:
-            raise ValidationError({'detail': _("Tidak boleh merubah {} karena sudah selesai".format(self.name))})
-
         if self.user.uuid != self.current_user.uuid:
             share = self.share.filter(to_user_id=self.current_user.id)
             is_can_buy = share.filter(is_can_buy=True)
