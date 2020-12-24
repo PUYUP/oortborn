@@ -332,7 +332,7 @@ class StuffApiView(viewsets.ViewSet):
 
     def list(self, request, format=None):
         context = {'request': request}
-        action = request.query_params.get('action', None)
+        status = request.query_params.get('status', None)
         amount = request.query_params.get('amount', None)
         basket_uuid = request.query_params.get('basket_uuid', None)
         date = request.query_params.get('date', None)
@@ -360,13 +360,13 @@ class StuffApiView(viewsets.ViewSet):
         summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount'))
 
         try:
-            if action == 'found' or action == 'notfound':
+            if status == 'found' or status == 'notfound':
                 queryset = queryset.filter(purchased_stuff__isnull=False)
-                if action == 'found':
+                if status == 'found':
                     queryset = queryset.filter(purchased_stuff__is_found=True)
-                elif action == 'notfound':
+                elif status == 'notfound':
                     queryset = queryset.filter(purchased_stuff__is_found=False)
-            elif action == 'looked':
+            elif status == 'looked':
                 queryset = queryset.filter(purchased_stuff__isnull=True)
 
             if basket_uuid:

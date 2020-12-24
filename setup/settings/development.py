@@ -1,6 +1,8 @@
 from .base import *
 from .project import *
 
+from corsheaders.defaults import default_headers
+
 DEBUG = True
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
@@ -54,6 +56,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',
     'http://localhost:8100',
     'http://127.0.0.1:8100',
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngsw-bypass',
 ]
 
 

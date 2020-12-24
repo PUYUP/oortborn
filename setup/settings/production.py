@@ -3,6 +3,7 @@ from .project import *
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from corsheaders.defaults import default_headers
 
 DEBUG = False
 ALLOWED_HOSTS = [
@@ -67,6 +68,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8100',
     'https://app.daftarbelanja.com',
     'https://daftar-belanja-001.firebaseapp.com',
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngsw-bypass',
 ]
 
 
