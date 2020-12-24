@@ -4,6 +4,8 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
+from ..utils.constants import METRIC_CHOICES
+
 
 class AbstractBrand(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -58,6 +60,11 @@ class AbstractProductRate(models.Model):
                                 related_name='product_rate', null=True, blank=True)
 
     name = models.CharField(max_length=255)
+    quantity = models.CharField(max_length=255, null=True, blank=True)
+    metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None,
+                              null=True, blank=True)
+    # price divided by amount and quantity
+    # eg: amount 6000 / quantity 6 = 1000
     price = models.BigIntegerField(default=0)
     location = models.CharField(max_length=255, null=True, blank=True)
 

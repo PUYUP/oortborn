@@ -40,7 +40,8 @@ def purchased_stuff_save_handler(sender, instance, created, **kwargs):
         # Collect product rate
         product_rate, _created = ProductRate.objects \
             .get_or_create(name=stuff.name, location=instance.location,
-                           price=instance.price, submitter=basket_user)
+                           price=instance.price, quantity=instance.quantity,
+                           metric=instance.metric, submitter=basket_user)
 
 
 @transaction.atomic
