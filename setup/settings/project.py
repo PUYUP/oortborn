@@ -11,6 +11,7 @@ APP_NAME = 'Daftar Belanja'
 PROJECT_URL = 'www.daftarbelanja.com'
 PAGINATION_PER_PAGE = 15
 LOGIN_WITH_JWT = True
+RECOVERY_PASSWORD_CHECK_ACCOUNT = True # If true in recovery password need make sure account exist
 
 
 # REGISTRATION REQUIREMENTS
@@ -144,3 +145,12 @@ REDIS_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT
 FIREBASE_CRED_FILE = '%s/%s' % (PROJECT_PATH, 'firebase-cred.json')
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = FIREBASE_CRED_FILE
 default_app = firebase_admin.initialize_app()
+
+
+# SENDGRID
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'apikey'
+EMAIL_HOST_PASSWORD = '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'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False

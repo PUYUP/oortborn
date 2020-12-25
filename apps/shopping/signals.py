@@ -41,7 +41,15 @@ def purchased_stuff_save_handler(sender, instance, created, **kwargs):
         product_rate, _created = ProductRate.objects \
             .get_or_create(name=stuff.name, location=instance.location,
                            price=instance.price, quantity=instance.quantity,
-                           metric=instance.metric, submitter=basket_user)
+                           metric=instance.metric, submitter=basket_user,
+                           purchased_stuff=instance, is_private=instance.is_private)
+    else:
+        product_rate = getattr(instance, 'product_rate').last()
+        if product_rate:
+            product_rate.price = instance.price
+            product_rate.location = instance.location
+            product_rate.is_private = instance.is_private
+            product_rate.save()
 
 
 @transaction.atomic

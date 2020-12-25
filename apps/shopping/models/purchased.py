@@ -109,6 +109,7 @@ class AbstractPurchasedStuff(models.Model):
     location = models.TextField(null=True, blank=True)
     # True = item available, False = item un-available, None = no action
     is_found = models.BooleanField(default=None, null=True)
+    is_private = models.BooleanField(default=False, null=True)
 
     class Meta:
         abstract = True

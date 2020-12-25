@@ -18,7 +18,7 @@ def send_verifycode_email(data):
 
     if to and passcode:
         subject = _(u"Kode Verifiaksi")
-        from_email = '%s <hellopuyup@gmail.com>' % (settings.APP_NAME)
+        from_email = '%s <noreply@daftarbelanja.com>' % (settings.APP_NAME)
 
         # Message
         text = _(

@@ -14,7 +14,7 @@ app = Celery('oort')
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 #   https://docs.celeryproject.org/en/stable/userguide/application.html
-app.config_from_object('setup.settings.celeryconfig', namespace='CELERY')
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
 # Auto-find task.py in each apps

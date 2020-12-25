@@ -17,7 +17,7 @@ from firebase_admin.auth import get_user_by_phone_number
 
 from utils.generals import get_model
 from apps.person.utils.constants import PASSWORD_RECOVERY
-from apps.person.utils.auth import get_users_by_email
+from apps.person.utils.auth import get_users_by_email, get_users_by_username
 from .serializers import VerifyCodeSerializer
 
 VerifyCode = get_model('person', 'VerifyCode')
@@ -31,15 +31,17 @@ class VerifyCodeApiView(viewsets.ViewSet):
     Param:
 
         {
-            "account": "admin",
             "email": "my@email.com",
             "msisdn": "09284255",
+            "username": "jack123",
             "challenge": "email_validation"
         }
     
     Rules:
 
-        account use for registered user
+        username only used if user don't have active email
+        eg; email auto-generate by system
+
         If email provided, msisdn not required
         If msisdn provide, email not required
     """
@@ -82,8 +84,7 @@ class VerifyCodeApiView(viewsets.ViewSet):
         except ObjectDoesNotExist:
             raise NotFound(_("Kode VerifyCode tidak ditemukan"))
 
-        serializer = VerifyCodeSerializer(instance, data=request.data, partial=True,
-                                          context=context)
+        serializer = VerifyCodeSerializer(instance, data=request.data, partial=True, context=context)
         if serializer.is_valid(raise_exception=True):
             try:
                 serializer.save()
@@ -107,6 +108,7 @@ class VerifyCodeApiView(viewsets.ViewSet):
 
             {
                 "email": "string",
+                "username": "string",
                 "msisdn": "string",
                 "token": "string",
                 "passcode": "string",
@@ -116,15 +118,16 @@ class VerifyCodeApiView(viewsets.ViewSet):
         context = {'request': request}
 
         email = request.data.get('email', None)
+        username = request.data.get('username', None)
         msisdn = request.data.get('msisdn', None)
         challenge = request.data.get('challenge', None)
         token = request.data.get('token', None)
         provider = request.data.get('provider', None)
         provider_value = request.data.get('provider_value', None)
 
-        if (not email and not msisdn) or not challenge or not token or not passcode:
+        if (not email and not msisdn and not username) or not challenge or not token or not passcode:
             raise NotAcceptable(_(u"Required parameter not provided."
-                                  " Required email or msisdn, challenge and token"))
+                                  " Required email o username or msisdn, challenge and token"))
 
         # jika menggunakan firebase maka verify code tidak terkirim
         # solusinya, kita memvalidasi otp dari firebase disini
@@ -166,13 +169,20 @@ class VerifyCodeApiView(viewsets.ViewSet):
         if not request.user.is_authenticated and challenge == PASSWORD_RECOVERY:
             token = None
             uidb64 = None
+            users = None
 
-            if email:
-                users = get_users_by_email(email)
-                for user in users:
-                    token = default_token_generator.make_token(user)
-                    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-                    break
+            if email or username:
+                if email and not username:
+                    users = get_users_by_email(email)
+
+                if username and users is None:
+                    users = get_users_by_username(username)
+    
+                if users is not None:
+                    for user in users:
+                        token = default_token_generator.make_token(user)
+                        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+                        break
 
             if msisdn:
                 # TODO: SMS verifycode

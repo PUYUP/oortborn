@@ -69,8 +69,8 @@ class ProductRateApiView(viewsets.ViewSet):
 
     def queryset(self):
         query = ProductRate.objects \
-            .prefetch_related('product') \
-            .select_related('product') \
+            .prefetch_related('product', 'purchased_stuff') \
+            .select_related('product', 'purchased_stuff') \
         
         return query
 
@@ -79,7 +79,7 @@ class ProductRateApiView(viewsets.ViewSet):
         summary = None
         date = request.query_params.get('date', None)
         keyword = request.query_params.get('keyword')
-        queryset = self.queryset().filter(price__gt=0)
+        queryset = self.queryset().filter(price__gt=0, is_private=False)
 
         if date:
             dt = parser.parse(date)

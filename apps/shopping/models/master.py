@@ -58,6 +58,8 @@ class AbstractProductRate(models.Model):
                                   related_name='product_rate', null=True, blank=True)
     product = models.ForeignKey('shopping.Product', on_delete=models.SET_NULL,
                                 related_name='product_rate', null=True, blank=True)
+    purchased_stuff = models.ForeignKey('shopping.PurchasedStuff', on_delete=models.SET_NULL,
+                                        related_name='product_rate', null=True, blank=True)
 
     name = models.CharField(max_length=255)
     quantity = models.CharField(max_length=255, null=True, blank=True)
@@ -67,6 +69,8 @@ class AbstractProductRate(models.Model):
     # eg: amount 6000 / quantity 6 = 1000
     price = models.BigIntegerField(default=0)
     location = models.CharField(max_length=255, null=True, blank=True)
+    # some reason user won't share to public
+    is_private = models.BooleanField(default=False, null=True)
 
     class Meta:
         abstract = True

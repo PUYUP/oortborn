@@ -88,6 +88,24 @@ def get_users_by_email(email):
     )
 
 
+def get_users_by_username(username):
+    """Given an username, return matching user(s) who should receive a reset.
+    This allows subclasses to more easily customize the default policies
+    that prevent inactive users and users with unusable passwords from
+    resetting their password.
+    """
+    username_field_name = 'username'
+    active_users = User._default_manager.filter(**{
+        '%s__iexact' % username_field_name: username,
+        'is_active': True,
+    })
+    return (
+        u for u in active_users
+        if u.has_usable_password() and
+        _unicode_ci_compare(username, getattr(u, username_field_name))
+    )
+
+
 def clear_verifycode_session(request, interact):
     # clear verifycode session
     for key in VerifyCode_SESSION_FIELDS:

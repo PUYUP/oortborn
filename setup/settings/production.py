@@ -102,15 +102,6 @@ DATABASES = {
 }
 
 
-# SENDGRID
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-
-
 # CHANNELS
 CHANNEL_LAYERS = {
     "default": {

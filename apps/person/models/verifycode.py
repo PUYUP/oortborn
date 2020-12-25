@@ -120,9 +120,17 @@ class AbstractVerifyCode(models.Model):
 
     def clean(self, *args, **kwargs):
         if not self.pk and not self.user:
+            # request object get from clean method
+            request = kwargs.get('request', {})
+
+            # username outside this model
+            # some reason user need recovery password and don't have valid account email
+            # eg; email auto-generate by system
+            # so for that we get user by username
+            username = request.data.get('username') if request else None
             user_query = User.objects \
-                .prefetch_related(Prefetch('account')) \
-                .select_related('account')
+                .prefetch_related(Prefetch('account', 'profile')) \
+                .select_related('account', 'profile')
 
             if self.email:
                 # check format email valid or not
@@ -140,15 +148,20 @@ class AbstractVerifyCode(models.Model):
                         )
 
             # Reset password make sure account exist
-            if self.challenge == PASSWORD_RECOVERY:
+            if self.challenge == PASSWORD_RECOVERY and settings.RECOVERY_PASSWORD_CHECK_ACCOUNT:
                 user_query = user_query.filter(
                     Q(email=Case(When(email__isnull=False, then=Value(self.email))))
+                    | Q(username=Case(When(username__isnull=False, then=Value(username))))
                     | Q(account__msisdn=Case(When(account__msisdn__isnull=False, then=Value(self.msisdn)))))
 
                 if not user_query.exists():
                     error_key = 'email'
+    
                     if self.msisdn:
                         error_key = 'msisdn'
+
+                    if username:
+                        error_key = 'username'
 
                     raise ValidationError({error_key: _(u"Akun tidak ditemukan")})
 

@@ -225,10 +225,10 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
 
             # make sure new and old password filled
             if not self.password1 or not self.password2:
-                raise serializers.ValidationError(_(u"Kata sandi lama dan baru wajib"))
+                raise serializers.ValidationError(_(u"Password lama dan baru wajib"))
             
             if self.password1 != self.password2:
-                raise serializers.ValidationError(_(u"Kata sandi lama dan baru tidak sama"))
+                raise serializers.ValidationError(_(u"Password lama dan baru tidak sama"))
 
             try:
                 validate_password(self.password2)
@@ -238,7 +238,7 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
             # check current password is passed
             passed = authenticate(username=username, password=self.password)
             if passed is None:
-                raise serializers.ValidationError(_(u"Kata sandi lama salah"))
+                raise serializers.ValidationError(_(u"Password lama salah"))
             return self.password2
         return value
 
@@ -291,8 +291,8 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
                     instance.set_password(value)
 
                     # add flash message
-                    messages.success(request, _("Kata sandi berhasil dirubah."
-                                                " Login dengan kata sandi baru Anda"))
+                    messages.success(request, _("Password berhasil dirubah."
+                                                " Login dengan password baru Anda"))
                 else:
                     old_value = getattr(instance, key, None)
                     if old_value != value:

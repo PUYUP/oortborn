@@ -47,11 +47,11 @@ class VerifyCodeFieldsModelSerializer(serializers.ModelSerializer):
 
 class VerifyCodeSerializer(VerifyCodeFieldsModelSerializer, CleanValidateMixin,
                            serializers.ModelSerializer):
-    account = serializers.CharField(read_only=True)
+    credential = serializers.CharField(read_only=True)
 
     class Meta:
         model = VerifyCode
-        fields = ('uuid', 'account', 'email', 'msisdn', 'challenge', 'token', 'valid_until',)
+        fields = ('uuid', 'credential', 'email', 'msisdn', 'challenge', 'token', 'valid_until',)
         read_only_fields = ('uuid', 'token',)
         extra_kwargs = {
             'challenge': {
@@ -76,19 +76,18 @@ class VerifyCodeSerializer(VerifyCodeFieldsModelSerializer, CleanValidateMixin,
             return user.account.msisdn
 
     def to_internal_value(self, data):
-        account = None
-        email = data.get('email')
-        msisdn = data.get('msisdn')
-        account = data.get('account')
+        email = data.get('email', None)
+        msisdn = data.get('msisdn', None)
+        credential = data.get('credential', None)
 
         # normalize
         data = super().to_internal_value(data)
 
-        # fill email by account found
+        # fill email by user found
         # TODO: use msisdn
-        if account and not email and not msisdn:
+        if credential and not email and not msisdn:
             try:
-                user = User.objects.get(Q(username=account) | Q(email=account) | Q(account__msisdn=account))
+                user = User.objects.get(Q(username=credential) | Q(email=credential) | Q(account__msisdn=credential))
                 data['email'] = getattr(user, 'email', None)
             except ObjectDoesNotExist:
                 pass

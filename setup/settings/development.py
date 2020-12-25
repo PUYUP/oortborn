@@ -72,15 +72,6 @@ STATICFILES_DIRS = (
 )
 
 
-# SENDGRID
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
-
-
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
