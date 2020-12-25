@@ -2,6 +2,7 @@ from .base import *
 from .project import *
 
 import sentry_sdk
+
 from sentry_sdk.integrations.django import DjangoIntegration
 from corsheaders.defaults import default_headers
 
@@ -18,7 +19,7 @@ ALLOWED_HOSTS = [
 
 # SENTRY
 sentry_sdk.init(
-    dsn="https://fc8ad650d89f42a0be005a19b401449a@o400235.ingest.sentry.io/5419903",
+    dsn="https://03b90e71d21646688b3c26fc13c9de50@o400235.ingest.sentry.io/5570476",
     integrations=[DjangoIntegration()],
     traces_sample_rate=1.0,
 
