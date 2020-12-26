@@ -113,10 +113,14 @@ class BasketApiView(viewsets.ViewSet):
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
 
+        # Calculate total ampunt
+        summary = queryset.aggregate(total_amount=Sum('stuff__purchased_stuff__amount', distinct=True))
+
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
                                       exclude_fields=['share', 'purchased'])
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
+        pagination_result['summary'] = summary
         return Response(pagination_result, status=response_status.HTTP_200_OK)
 
     def retrieve(self, request, uuid=None, format=None):
@@ -417,7 +421,7 @@ class StuffApiView(viewsets.ViewSet):
             queryset = queryset.filter(purchased_stuff__isnull=False)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount'))
+        summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount', distinct=True))
 
         try:
             if status == 'found' or status == 'notfound':
