@@ -17,6 +17,7 @@ UNIT = 'unit'
 CUP = 'cup'
 CANS = 'cans'
 NOMINAL = 'nominal'
+JOINTLY = 'jointly'
 METRIC_CHOICES = (
     (NOMINAL, _("Nominal")),
     (KILOGRAM, _("Kilogram")),
@@ -33,6 +34,7 @@ METRIC_CHOICES = (
     (SACK, _("Karung")),
     (BOX, _("Kotak")),
     (CANS, _("Kaleng")),
+    (JOINTLY, _("Renteng")),
     (UNIT, _("Unit")),
 )
 
