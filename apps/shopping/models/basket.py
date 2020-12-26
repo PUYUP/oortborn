@@ -20,7 +20,11 @@ class AbstractBasket(models.Model):
     name = models.CharField(max_length=255)
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
+    # general sort
     sort = models.IntegerField(default=1)
+    # sort after complete
+    complete_sort = models.IntegerField(default=1)
+    complete_at = models.DateTimeField(auto_now=False, blank=True, null=True)
     is_complete = models.BooleanField(default=False)
     is_purchased = models.BooleanField(default=False)
 
@@ -351,6 +355,7 @@ class AbstractShare(models.Model):
                                 related_name='share_to_user')
     
     status = models.CharField(choices=SHARE_STATUS, default=WAITING, max_length=15)
+    sort = models.IntegerField(default=1)
     # all crud allowed (for stuff and basket)
     is_admin = models.BooleanField(default=False)
     # only stuff created by him self

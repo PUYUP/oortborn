@@ -125,15 +125,17 @@ class BasketSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, seriali
     total_attachment = serializers.IntegerField(read_only=True)
     
     is_creator = serializers.SerializerMethodField(read_only=True)
-    is_share_you = serializers.BooleanField(read_only=True)
+    is_share_with_you = serializers.BooleanField(read_only=True)
+    is_share_uuid = serializers.UUIDField(read_only=True)
+    is_share_sort = serializers.IntegerField(read_only=True)
     """
     is_share_status = serializers.CharField(read_only=True)
-    is_share_uuid = serializers.UUIDField(read_only=True)
     is_share_admin = serializers.BooleanField(read_only=True)
     is_share_can_crud = serializers.BooleanField(read_only=True)
     is_share_can_read = serializers.BooleanField(read_only=True)
     is_share_can_buy = serializers.BooleanField(read_only=True)
     """
+    sorted = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Basket

@@ -1,7 +1,7 @@
 from dateutil import parser
 
-from django.db import transaction
-from django.db.models import Count, Sum, Q, F, Exists, Subquery, OuterRef, Case, When, BooleanField
+from django.db import transaction, IntegrityError
+from django.db.models import Count, Sum, Q, F, Exists, Subquery, OuterRef, Case, When, IntegerField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -56,13 +56,20 @@ class BasketApiView(viewsets.ViewSet):
                 total_share=Count('share', distinct=True),
                 total_attachment=Count('basket_attachment', distinct=True),
                 
-                is_share_you=Exists(share_obj),
+                is_share_with_you=Exists(share_obj),
+                is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
+                is_share_sort=Subquery(share_obj.values('sort')[:1]),
                 # is_share_status=Subquery(share_obj.values('status')[:1]),
-                # is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
                 # is_share_admin=Subquery(share_obj.values('is_admin')[:1]),
                 # is_share_can_crud=Subquery(share_obj.values('is_can_crud')[:1]),
                 # is_share_can_read=Subquery(share_obj.values('is_can_read')[:1]),
-                # is_share_can_buy=Subquery(share_obj.values('is_can_buy')[:1])
+                # is_share_can_buy=Subquery(share_obj.values('is_can_buy')[:1]),
+                sorted=Case(
+                    When(is_share_sort__isnull=False, then=F('is_share_sort')),
+                    When(is_complete=True, then=F('complete_sort')),
+                    default=F('sort'),
+                    output_field=IntegerField()
+                )
             ) \
             .filter(
                 Q(user_id=self.request.user.id) 
@@ -96,12 +103,12 @@ class BasketApiView(viewsets.ViewSet):
         context = {'request': request}
         is_complete = request.query_params.get('is_complete')
         keyword = request.query_params.get('keyword')
-        queryset = self.queryset().order_by('-sort')
+        queryset = self.queryset()
 
         if is_complete == 'true':
-            queryset = queryset.filter(is_complete=True)
+            queryset = queryset.filter(is_complete=True).order_by('sorted')
         elif is_complete == 'false':
-            queryset = queryset.filter(is_complete=False)
+            queryset = queryset.filter(is_complete=False).order_by('sorted')
 
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
@@ -291,6 +298,59 @@ class BasketApiView(viewsets.ViewSet):
             except ValidationError as e:
                 raise NotAcceptable(detail=' '.join(e))
             return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
+
+    """***********
+    BULK UPDATES
+    ***********"""
+    @method_decorator(never_cache)
+    @transaction.atomic
+    @action(methods=['patch'], detail=False,
+            permission_classes=[IsAuthenticated],
+            url_path='updates', url_name='bulk_updates')
+    def bulk_updates(self, request, uuid=None):
+        """
+        Params:
+            [
+                {"uuid": "adadafa", "sort": 0, "is_complete": boolean},
+                {"uuid": "adadafa", "sort": 1, "is_complete": boolean}
+            ]
+        """
+        method = request.method
+  
+        if not request.data:
+            raise NotAcceptable()
+
+        if method == 'PATCH':
+            update_objs = list()
+
+            for i, v in enumerate(request.data):
+                uuid = v.get('uuid')
+                sort = int(v.get('sort'))
+                is_complete = v.get('is_complete')
+ 
+                try:
+                    obj = Basket.objects.get(user_id=request.user.id, uuid=uuid)
+                    if is_complete:
+                        setattr(obj, 'complete_sort', sort)
+                    else:
+                        setattr(obj, 'sort', sort)
+    
+                    update_objs.append(obj)
+                except (ValidationError, ObjectDoesNotExist) as e:
+                    pass
+
+            if not update_objs:
+                raise NotAcceptable()
+
+            if update_objs:
+                try:
+                    Basket.objects.bulk_update(update_objs, ['sort', 'complete_sort'])
+                except IntegrityError:
+                    return Response({'detail': _(u"Fatal error")},
+                                    status=response_status.HTTP_406_NOT_ACCEPTABLE)
+
+                return Response({'detail': _(u"Update success")},
+                                status=response_status.HTTP_200_OK)
 
 
 """
@@ -521,3 +581,51 @@ class ShareApiView(viewsets.ViewSet):
 
         return Response({'detail': _("Delete success!")},
                         status=response_status.HTTP_204_NO_CONTENT)
+
+    """***********
+    BULK UPDATES
+    ***********"""
+    @transaction.atomic
+    @action(methods=['patch'], detail=False,
+            permission_classes=[IsAuthenticated],
+            url_path='updates', url_name='bulk_updates')
+    def bulk_updates(self, request, uuid=None):
+        """
+        Params:
+            [
+                {"uuid": "adadafa", "sort": 0},
+                {"uuid": "adadafa", "sort": 1}
+            ]
+        """
+        method = request.method
+  
+        if not request.data:
+            raise NotAcceptable()
+
+        if method == 'PATCH':
+            update_objs = list()
+
+            for i, v in enumerate(request.data):
+                uuid = v.get('uuid')
+                sort = int(v.get('sort'))
+ 
+                try:
+                    obj = Share.objects.get(Q(user_id=request.user.id) | Q(to_user_id=request.user.id), Q(uuid=uuid))
+                    setattr(obj, 'sort', sort)
+    
+                    update_objs.append(obj)
+                except (ValidationError, ObjectDoesNotExist) as e:
+                    pass
+
+            if not update_objs:
+                raise NotAcceptable()
+
+            if update_objs:
+                try:
+                    Share.objects.bulk_update(update_objs, ['sort'])
+                except IntegrityError:
+                    return Response({'detail': _(u"Fatal error")},
+                                    status=response_status.HTTP_406_NOT_ACCEPTABLE)
+
+                return Response({'detail': _(u"Update success")},
+                                status=response_status.HTTP_200_OK)

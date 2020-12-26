@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -6,6 +6,7 @@ from rest_framework import viewsets, status as response_status
 from rest_framework.exceptions import NotAcceptable, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from utils.generals import get_model
 from .serializers import PurchasedSerializer, PurchasedStuffSerializer
@@ -84,6 +85,54 @@ class PurchasedApiView(viewsets.ViewSet):
 
         return Response({'detail': _("Delete success!")},
                         status=response_status.HTTP_204_NO_CONTENT)
+
+    """***********
+    BULK UPDATES
+    ***********"""
+    @transaction.atomic
+    @action(methods=['patch'], detail=False,
+            permission_classes=[IsAuthenticated],
+            url_path='updates', url_name='bulk_updates')
+    def bulk_updates(self, request, uuid=None):
+        """
+        Params:
+            [
+                {"uuid": "adadafa", "sort": 0},
+                {"uuid": "adadafa", "sort": 1}
+            ]
+        """
+        method = request.method
+  
+        if not request.data:
+            raise NotAcceptable()
+
+        if method == 'PATCH':
+            update_objs = list()
+
+            for i, v in enumerate(request.data):
+                uuid = v.get('uuid')
+                sort = int(v.get('sort'))
+ 
+                try:
+                    obj = Purchased.objects.get(user_id=request.user.id, uuid=uuid)
+                    setattr(obj, 'sort', sort)
+    
+                    update_objs.append(obj)
+                except (ValidationError, ObjectDoesNotExist) as e:
+                    pass
+
+            if not update_objs:
+                raise NotAcceptable()
+
+            if update_objs:
+                try:
+                    Purchased.objects.bulk_update(update_objs, ['sort'])
+                except IntegrityError:
+                    return Response({'detail': _(u"Fatal error")},
+                                    status=response_status.HTTP_406_NOT_ACCEPTABLE)
+
+                return Response({'detail': _(u"Update success")},
+                                status=response_status.HTTP_200_OK)
 
 
 class PurchasedStuffApiView(viewsets.ViewSet):
