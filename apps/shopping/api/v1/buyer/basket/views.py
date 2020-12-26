@@ -43,7 +43,7 @@ class BasketApiView(viewsets.ViewSet):
 
         query = Basket.objects \
             .prefetch_related('user', 'stuff', 'stuff__purchased_stuff', 'purchased',
-                              'purchased__basket', 'purchased__to_user', 'purchased__schedule',
+                              'purchased__basket', 'purchased__user', 'purchased__schedule',
                               'share', 'share__to_user', 'share__basket') \
             .select_related('user') \
             .annotate(
@@ -73,7 +73,7 @@ class BasketApiView(viewsets.ViewSet):
             ) \
             .filter(
                 Q(user_id=self.request.user.id) 
-                | Q(purchased__to_user_id=self.request.user.id)
+                | Q(purchased__user_id=self.request.user.id)
                 | Q(share__to_user_id=self.request.user.id)
             )
 
@@ -103,12 +103,12 @@ class BasketApiView(viewsets.ViewSet):
         context = {'request': request}
         is_complete = request.query_params.get('is_complete')
         keyword = request.query_params.get('keyword')
-        queryset = self.queryset()
+        queryset = self.queryset().order_by('sorted')
 
         if is_complete == 'true':
-            queryset = queryset.filter(is_complete=True).order_by('sorted')
+            queryset = queryset.filter(is_complete=True)
         elif is_complete == 'false':
-            queryset = queryset.filter(is_complete=False).order_by('sorted')
+            queryset = queryset.filter(is_complete=False)
 
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
@@ -369,7 +369,7 @@ class StuffApiView(viewsets.ViewSet):
             .select_related('basket', 'product', 'user') \
             .filter(
                 Q(basket__user_id=self.request.user.id)
-                | Q(basket__purchased__to_user_id=self.request.user.id)
+                | Q(basket__purchased__user_id=self.request.user.id)
                 | Q(basket__share__to_user_id=self.request.user.id)
             ).distinct()
         

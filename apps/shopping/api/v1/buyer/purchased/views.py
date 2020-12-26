@@ -21,8 +21,8 @@ class PurchasedApiView(viewsets.ViewSet):
 
     def queryset(self):
         query = Purchased.objects \
-            .prefetch_related('to_user', 'user', 'basket') \
-            .select_related('to_user', 'user', 'basket')
+            .prefetch_related('user', 'basket') \
+            .select_related('user', 'basket')
 
         return query
 

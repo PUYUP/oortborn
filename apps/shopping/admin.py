@@ -59,8 +59,8 @@ class PurchasedExtend(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request) \
-            .prefetch_related('user', 'basket', 'schedule', 'to_user') \
-            .select_related('user', 'basket', 'schedule', 'to_user')
+            .prefetch_related('user', 'basket', 'schedule') \
+            .select_related('user', 'basket', 'schedule')
 
         return qs
 
@@ -71,11 +71,6 @@ class PurchasedExtend(admin.ModelAdmin):
                 .select_related('user')
         
         if db_field.name == 'user':
-            kwargs['queryset'] = get_user_model().objects \
-                .prefetch_related('account', 'profile') \
-                .select_related('account', 'profile')
-
-        if db_field.name == 'to_user':
             kwargs['queryset'] = get_user_model().objects \
                 .prefetch_related('account', 'profile') \
                 .select_related('account', 'profile')
@@ -106,8 +101,8 @@ class PurchasedStuffExtend(admin.ModelAdmin):
         
         if db_field.name == 'purchased':
             kwargs['queryset'] = Purchased.objects \
-                .prefetch_related('user', 'basket', 'to_user', 'schedule') \
-                .select_related('user', 'basket', 'to_user', 'schedule')
+                .prefetch_related('user', 'basket', 'schedule') \
+                .select_related('user', 'basket', 'schedule')
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

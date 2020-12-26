@@ -21,17 +21,16 @@ class PurchasedListSerializer(serializers.ListSerializer):
         user = request.user
         
         if source == 'purchased':
-            data = data.select_related('to_user', 'basket') \
-                .prefetch_related('to_user', 'basket') \
-                .filter(to_user_id=user.id)
+            data = data.select_related('user', 'basket') \
+                .prefetch_related('user', 'basket') \
+                .filter(user_id=user.id)
 
         return super().to_representation(data)
 
 
 class PurchasedSerializer(CleanValidateMixin, serializers.ModelSerializer):
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    to_user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all())
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all())
 
     class Meta:
         model = Purchased

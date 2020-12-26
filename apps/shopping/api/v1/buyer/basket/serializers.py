@@ -193,7 +193,7 @@ class StuffSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializ
             self.purchased_stuff.pop('purchased')
 
             # Get purchased from current user
-            purchased = basket.purchased.get(to_user_id=request.user.id)
+            purchased = basket.purchased.get(user_id=request.user.id)
             PurchasedStuff.objects.create(user=request.user, stuff=instance, basket=basket,
                                           purchased=purchased, **self.purchased_stuff)
             

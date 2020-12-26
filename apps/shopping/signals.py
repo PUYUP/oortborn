@@ -24,13 +24,15 @@ def purchased_save_handler(sender, instance, created, **kwargs):
 def purchased_stuff_save_handler(sender, instance, created, **kwargs):
     if created:
         purchased = instance.purchased
-        purchased_to_user = purchased.to_user
+        purchased_user = purchased.user
         basket = instance.basket
         basket_user = basket.user
         stuff = instance.stuff
 
-        # If basket creator and to_user same, mark stuff is_done!
-        if basket_user.id == purchased_to_user.id:
+        # If basket creator and purchased user same, mark stuff is_done!
+        # Ini akan digunakan untuk fitur operator dimana customer mengecek
+        # apakah semua item sudah terbeli dengan menandai sebagai 'is_done'
+        if basket_user.id == purchased_user.id:
             stuff.is_done = True
         
         # Mark stuff purchased
@@ -55,7 +57,7 @@ def purchased_stuff_save_handler(sender, instance, created, **kwargs):
 @transaction.atomic
 def share_delete_handler(sender, instance, using, **kwargs):
     stuff_objs = instance.basket.stuff.filter(user_id=instance.to_user.id)
-    purchased_objs = instance.basket.purchased.filter(to_user_id=instance.to_user.id)
+    purchased_objs = instance.basket.purchased.filter(user_id=instance.to_user.id)
 
     if stuff_objs.exists():
         stuff_objs.delete()

@@ -375,11 +375,8 @@ class AbstractShare(models.Model):
     def check_can_add(self):
         """ Hanya creator Basket yg bisa membagikan """
         if self.basket.user.uuid != self.current_user.uuid:
-            raise ValidationError({'detail': _("Tidak bisa membagikan {}".format(self.basket.name))})
+            raise ValidationError({'detail': _("Hanya pemilik yang boleh membagikan {}".format(self.basket.name))})
 
-        if self.basket.is_complete:
-            raise ValidationError({'detail': _("Menambahkan user tidak diperbolehkan")})
-    
     def check_can_update(self):
         """ 
         Hanya creator Basket yg bisa merubah 
@@ -387,19 +384,13 @@ class AbstractShare(models.Model):
         """
         if (self.share_obj and self.share_obj.status != 'waiting') and (self.user.uuid != self.current_user.uuid):
             raise ValidationError({'detail': _("Tidak bisa merubah")})
-        
-        if self.basket.is_complete:
-            raise ValidationError({'detail': _("Merubah tidak diperbolehkan")})
-        
+
     def check_can_delete(self):
         """ 
         Hanya bisa dihapus oleh creator 
         Hanya jika belanja belum selesai
         Hanya jika to_user belum berkontribusi
         """
-
-        if self.basket.is_complete:
-            raise ValidationError(_("Belanja telah selesai. Tindakan penghapusan tidak diperbolehkan."))
 
         if not self.share.exists() and self.user.uuid != self.current_user.uuid:
             raise ValidationError(_("Tidak diizinkan menghapus"))
@@ -425,10 +416,6 @@ class AbstractShare(models.Model):
         # Can't share to him self
         if self.basket.user.id == self.to_user.id:
             raise ValidationError({'to_user': _("Tidak boleh membagikan ke akun sendiri")})
-        
-        # Complete basket can't share
-        if self.basket.is_complete:
-            raise ValidationError({'basket': _("Belanja telah selesai, pengeditan tidak diperbolehkan")})
         
         return super().clean()
 

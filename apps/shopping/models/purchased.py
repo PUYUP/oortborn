@@ -17,8 +17,6 @@ class AbstractPurchased(models.Model):
                                related_name='purchased')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='purchased_user')
-    to_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                                related_name='purchased_to_user')
     schedule = models.ForeignKey('shopping.Schedule', on_delete=models.SET_NULL,
                                  related_name='purchased', null=True, blank=True)
 
@@ -188,10 +186,6 @@ class AbstractPurchasedStuff(models.Model):
             self.check_can_delete()
 
         super().delete(*args, **kwargs)
-
-    @property
-    def to_user(self):
-        return self.purchased.to_user
 
 
 class AbstractTrackLocation(models.Model):
