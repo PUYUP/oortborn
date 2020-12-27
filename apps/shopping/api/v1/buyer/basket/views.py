@@ -52,7 +52,7 @@ class BasketApiView(viewsets.ViewSet):
                 total_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
                 total_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
                 total_stuff_looked=F('total_stuff') - F('total_stuff_purchased'),
-                total_amount=Sum('stuff__purchased_stuff__amount', distinc=True),
+                total_amount=Sum('stuff__purchased_stuff__amount'),
                 total_share=Count('share', distinct=True),
                 total_attachment=Count('basket_attachment', distinct=True),
                 
@@ -114,7 +114,7 @@ class BasketApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('stuff__purchased_stuff__amount', distinct=True))
+        summary = queryset.aggregate(total_amount=Sum('stuff__purchased_stuff__amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
@@ -421,7 +421,7 @@ class StuffApiView(viewsets.ViewSet):
             queryset = queryset.filter(purchased_stuff__isnull=False)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount', distinct=True))
+        summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount'))
 
         try:
             if status == 'found' or status == 'notfound':
