@@ -155,6 +155,34 @@ class BasketApiView(viewsets.ViewSet):
                 raise ValidationErrorResponse(detail=str(e))
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
+    
+    @transaction.atomic
+    def put(self, request, format=None):
+        fields = []
+        update_uuids = [item.get('uuid') for item in request.data]
+
+        # Collect fields affect for updated
+        for item in request.data:
+            fields.extend(list(item.keys()))
+
+        queryset = self.queryset().filter(uuid__in=update_uuids)
+        if queryset.exists():
+            used_fields = [*list(dict.fromkeys(fields))]
+        else:
+            used_fields = '__all__'
+
+        context = {'request': request}
+        serializer = BasketSerializer(queryset, data=request.data, context=context, many=True,
+                                      fields=[*used_fields])
+
+        if serializer.is_valid(raise_exception=True):
+            try:
+                serializer.save()
+            except ValidationError as e:
+                raise NotAcceptable(detail=str(e))
+
+            return Response(serializer.data, status=response_status.HTTP_200_OK)
+        return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
 
     @transaction.atomic
     def destroy(self, request, uuid=None, format=None):
@@ -303,59 +331,6 @@ class BasketApiView(viewsets.ViewSet):
                 raise NotAcceptable(detail=' '.join(e))
             return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
 
-    """***********
-    BULK UPDATES
-    ***********"""
-    @method_decorator(never_cache)
-    @transaction.atomic
-    @action(methods=['patch'], detail=False,
-            permission_classes=[IsAuthenticated],
-            url_path='updates', url_name='bulk_updates')
-    def bulk_updates(self, request, uuid=None):
-        """
-        Params:
-            [
-                {"uuid": "adadafa", "sort": 0, "is_complete": boolean},
-                {"uuid": "adadafa", "sort": 1, "is_complete": boolean}
-            ]
-        """
-        method = request.method
-  
-        if not request.data:
-            raise NotAcceptable()
-
-        if method == 'PATCH':
-            update_objs = list()
-
-            for i, v in enumerate(request.data):
-                uuid = v.get('uuid')
-                sort = int(v.get('sort'))
-                is_complete = v.get('is_complete')
- 
-                try:
-                    obj = Basket.objects.get(user_id=request.user.id, uuid=uuid)
-                    if is_complete:
-                        setattr(obj, 'complete_sort', sort)
-                    else:
-                        setattr(obj, 'sort', sort)
-    
-                    update_objs.append(obj)
-                except (ValidationError, ObjectDoesNotExist) as e:
-                    pass
-
-            if not update_objs:
-                raise NotAcceptable()
-
-            if update_objs:
-                try:
-                    Basket.objects.bulk_update(update_objs, ['sort', 'complete_sort'])
-                except IntegrityError:
-                    return Response({'detail': _(u"Fatal error")},
-                                    status=response_status.HTTP_406_NOT_ACCEPTABLE)
-
-                return Response({'detail': _(u"Update success")},
-                                status=response_status.HTTP_200_OK)
-
 
 """
 START STUFF
@@ -479,6 +454,34 @@ class StuffApiView(viewsets.ViewSet):
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
 
     @transaction.atomic
+    def put(self, request, format=None):
+        fields = []
+        update_uuids = [item.get('uuid') for item in request.data]
+
+        # Collect fields affect for updated
+        for item in request.data:
+            fields.extend(list(item.keys()))
+
+        queryset = self.queryset().filter(uuid__in=update_uuids)
+        if queryset.exists():
+            used_fields = [*list(dict.fromkeys(fields))]
+        else:
+            used_fields = '__all__'
+ 
+        context = {'request': request}
+        serializer = StuffSerializer(queryset, data=request.data, context=context, many=True,
+                                     fields=used_fields)
+
+        if serializer.is_valid(raise_exception=True):
+            try:
+                serializer.save()
+            except ValidationError as e:
+                raise NotAcceptable(detail=str(e))
+
+            return Response(serializer.data, status=response_status.HTTP_200_OK)
+        return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+
+    @transaction.atomic
     def destroy(self, request, uuid=None, format=None):
         queryset = self.get_object(uuid=uuid)
 
@@ -575,6 +578,34 @@ class ShareApiView(viewsets.ViewSet):
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
 
     @transaction.atomic
+    def put(self, request, format=None):
+        fields = []
+        update_uuids = [item.get('uuid') for item in request.data]
+
+        # Collect fields affect for updated
+        for item in request.data:
+            fields.extend(list(item.keys()))
+
+        queryset = self.queryset().filter(uuid__in=update_uuids)
+        if queryset.exists():
+            used_fields = [*list(dict.fromkeys(fields))]
+        else:
+            used_fields = '__all__'
+    
+        context = {'request': request}
+        serializer = ShareSerializer(queryset, data=request.data, context=context, many=True,
+                                     fields=[*used_fields])
+
+        if serializer.is_valid(raise_exception=True):
+            try:
+                serializer.save()
+            except ValidationError as e:
+                raise NotAcceptable(detail=str(e))
+
+            return Response(serializer.data, status=response_status.HTTP_200_OK)
+        return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+
+    @transaction.atomic
     def destroy(self, request, uuid=None, format=None):
         queryset = self.get_object(uuid=uuid)
         
@@ -585,51 +616,3 @@ class ShareApiView(viewsets.ViewSet):
 
         return Response({'detail': _("Delete success!")},
                         status=response_status.HTTP_204_NO_CONTENT)
-
-    """***********
-    BULK UPDATES
-    ***********"""
-    @transaction.atomic
-    @action(methods=['patch'], detail=False,
-            permission_classes=[IsAuthenticated],
-            url_path='updates', url_name='bulk_updates')
-    def bulk_updates(self, request, uuid=None):
-        """
-        Params:
-            [
-                {"uuid": "adadafa", "sort": 0},
-                {"uuid": "adadafa", "sort": 1}
-            ]
-        """
-        method = request.method
-  
-        if not request.data:
-            raise NotAcceptable()
-
-        if method == 'PATCH':
-            update_objs = list()
-
-            for i, v in enumerate(request.data):
-                uuid = v.get('uuid')
-                sort = int(v.get('sort'))
- 
-                try:
-                    obj = Share.objects.get(Q(user_id=request.user.id) | Q(to_user_id=request.user.id), Q(uuid=uuid))
-                    setattr(obj, 'sort', sort)
-    
-                    update_objs.append(obj)
-                except (ValidationError, ObjectDoesNotExist) as e:
-                    pass
-
-            if not update_objs:
-                raise NotAcceptable()
-
-            if update_objs:
-                try:
-                    Share.objects.bulk_update(update_objs, ['sort'])
-                except IntegrityError:
-                    return Response({'detail': _(u"Fatal error")},
-                                    status=response_status.HTTP_406_NOT_ACCEPTABLE)
-
-                return Response({'detail': _(u"Update success")},
-                                status=response_status.HTTP_200_OK)

@@ -6,12 +6,16 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import slugify
 
-from rest_framework import fields, serializers
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
 from utils.generals import get_model
 from utils.mixin.validators import CleanValidateMixin
-from utils.mixin.api import DynamicFieldsModelSerializer, ExcludeFieldsModelSerializer
+from utils.mixin.api import (
+    DynamicFieldsModelSerializer, 
+    ExcludeFieldsModelSerializer, 
+    ListSerializerUpdateMappingField
+)
 from ..purchased.serializers import PurchasedSerializer, PurchasedStuffSerializer
 
 Basket = get_model('shopping', 'Basket')
@@ -42,7 +46,13 @@ def handle_upload_attachment(instance, file):
         instance.save(update_fields=['image'])
 
 
-class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer, serializers.ModelSerializer):
+class ShareListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
+    pass
+
+
+class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+                      ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:share-detail',
                                                lookup_field='uuid', read_only=True)
     msisdn = serializers.CharField(read_only=True, source='to_user.account.msisdn')
@@ -55,6 +65,7 @@ class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer, serializ
     class Meta:
         model = Share
         fields = '__all__'
+        list_serializer_class = ShareListSerializer
 
     def to_internal_value(self, data):
         username = data.pop('username', None)
@@ -105,7 +116,13 @@ class BasketAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer
         return obj
 
 
-class BasketSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+class BasketListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
+    pass
+
+
+class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:basket-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -140,6 +157,7 @@ class BasketSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, seriali
     class Meta:
         model = Basket
         fields = '__all__'
+        list_serializer_class = BasketListSerializer
 
     def get_is_creator(self, obj):
         request = self.context.get('request')
@@ -158,18 +176,26 @@ class BasketSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, seriali
         return super().update(instance, validated_data)
 
 
-class StuffSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+class StuffListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
+    pass
+
+
+class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+                      ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:stuff-detail',
                                                lookup_field='uuid', read_only=True)
-    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(), default=serializers.CurrentUserDefault())
-    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
+                                        default=serializers.CurrentUserDefault())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
     purchased_stuff = PurchasedStuffSerializer(required=False, exclude_fields=['stuff', 'purchased'])
     is_creator = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Stuff
         fields = '__all__'
+        list_serializer_class = StuffListSerializer
     
     def get_is_creator(self, obj):
         request = self.context.get('request')

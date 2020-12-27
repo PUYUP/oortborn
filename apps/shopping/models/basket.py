@@ -265,12 +265,12 @@ class AbstractStuff(models.Model):
         if purchased_stuff is not None:
             if purchased_stuff.user.uuid != self.current_user.uuid:
                 raise ValidationError(_("{} sudah dibeli {} tidak bisa dihapus".format(self.name, purchased_stuff.user.first_name)))
-        
+
         if self.user.uuid != self.current_user.uuid:
             is_admin = self.share.filter(is_admin=True).exists()
             if not is_admin:
                 raise ValidationError(_("Menghapus {} ditolak".format(self.name)))
-        
+
         if self.basket.is_complete and not self.is_additional:
             raise ValidationError(_("Menghapus item {} setelah belanja selesai tidak diperbolehkan".format(self.name)))
 

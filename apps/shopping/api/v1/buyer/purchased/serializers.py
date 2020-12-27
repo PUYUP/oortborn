@@ -4,7 +4,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from utils.generals import get_model
-from utils.mixin.api import ExcludeFieldsModelSerializer
+from utils.mixin.api import (
+    DynamicFieldsModelSerializer, 
+    ExcludeFieldsModelSerializer, 
+    ListSerializerUpdateMappingField
+)
 from utils.mixin.validators import CleanValidateMixin
 
 Purchased = get_model('shopping', 'Purchased')
@@ -14,28 +18,19 @@ Stuff = get_model('shopping', 'Stuff')
 User = get_user_model()
 
 
-class PurchasedListSerializer(serializers.ListSerializer):
-    def to_representation(self, data):
-        source = getattr(self, 'source')
-        request = self.context.get('request')
-        user = request.user
-        
-        if source == 'purchased':
-            data = data.select_related('user', 'basket') \
-                .prefetch_related('user', 'basket') \
-                .filter(user_id=user.id)
-
-        return super().to_representation(data)
+class PurchasedListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
+    pass
 
 
-class PurchasedSerializer(CleanValidateMixin, serializers.ModelSerializer):
+class PurchasedSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+                          ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
     user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all())
 
     class Meta:
         model = Purchased
-        # list_serializer_class = PurchasedListSerializer
         fields = '__all__'
+        list_serializer_class = PurchasedListSerializer
 
     @transaction.atomic
     def create(self, validated_data):
