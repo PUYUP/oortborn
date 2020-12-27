@@ -47,14 +47,14 @@ class BasketApiView(viewsets.ViewSet):
                               'share', 'share__to_user', 'share__basket') \
             .select_related('user') \
             .annotate(
-                total_stuff=Count('stuff', distinct=True),
-                total_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
-                total_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
-                total_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
-                total_stuff_looked=F('total_stuff') - F('total_stuff_purchased'),
-                total_amount=Sum('stuff__purchased_stuff__amount'),
-                total_share=Count('share', distinct=True),
-                total_attachment=Count('basket_attachment', distinct=True),
+                subtotal_stuff=Count('stuff', distinct=True),
+                subtotal_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
+                subtotal_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
+                subtotal_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
+                subtotal_stuff_looked=F('subtotal_stuff') - F('subtotal_stuff_purchased'),
+                subtotal_amount=Sum('stuff__purchased_stuff__amount'),
+                subtotal_share=Count('share', distinct=True),
+                subtotal_attachment=Count('basket_attachment', distinct=True),
                 
                 is_share_with_you=Exists(share_obj),
                 is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
@@ -114,7 +114,7 @@ class BasketApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('total_amount'))
+        summary = queryset.aggregate(total_amount=Sum('subtotal_amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
