@@ -114,7 +114,7 @@ class BasketApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('stuff__purchased_stuff__amount'))
+        summary = queryset.aggregate(total_amount=Sum('total_amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
