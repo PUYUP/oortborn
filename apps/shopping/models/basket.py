@@ -399,7 +399,9 @@ class AbstractShare(models.Model):
         to_user_has_purchased = self.basket.purchased_stuff.filter(user_id=self.to_user.id).exists()
 
         if to_user_has_stuff or to_user_has_purchased:
-            raise ValidationError(_("{} sudah menambahkan / membeli item. Tidak bisa dihapus".format(self.to_user.first_name)))
+            if self.to_user.id != self.current_user.id:
+                raise ValidationError(_("{} sudah menambahkan / membeli item. Tidak bisa dihapus".format(self.to_user.first_name)))
+            raise ValidationError(_("Anda memiliki item di {}. Tidak bisa dihapus. Hapus terlebih dahulu item Anda untuk menghapus daftar ini.".format(self.basket.name)))
 
     def clean(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
