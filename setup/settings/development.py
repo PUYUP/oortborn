@@ -85,7 +85,7 @@ CHANNEL_LAYERS = {
 
 if DEBUG and not IS_UNIX:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('127.0.0.1', '10.0.2.2', 'localhost',)
+    INTERNAL_IPS = ('127.0.0.1', '10.0.2.2', 'localhost' '192.168.1.115',)
     MIDDLEWARE += (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
     )

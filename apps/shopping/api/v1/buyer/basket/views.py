@@ -1,6 +1,6 @@
 from dateutil import parser
 
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.db.models import Count, Sum, Q, F, Exists, Subquery, OuterRef, Case, When, IntegerField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -18,12 +18,13 @@ from rest_framework.parsers import MultiPartParser
 
 from utils.generals import get_model
 from utils.pagination import build_result_pagination
-from .serializers import BasketAttachmentSerializer, PurchasedStuff, Share, BasketSerializer, StuffSerializer, ShareSerializer
+from .serializers import BasketAttachmentSerializer, BasketSerializer, StuffSerializer, ShareSerializer
 
 Basket = get_model('shopping', 'Basket')
 BasketAttachment = get_model('shopping', 'BasketAttachment')
 Stuff = get_model('shopping', 'Stuff')
 Share = get_model('shopping', 'Share')
+PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 
 # Define to avoid used ...().paginate__
 _PAGINATOR = LimitOffsetPagination()
@@ -40,6 +41,9 @@ class BasketApiView(viewsets.ViewSet):
     def queryset(self):
         date = self.request.query_params.get('date', None)
         share_obj = Share.objects.filter(basket__uuid=OuterRef('uuid'), to_user_id=self.request.user.id)
+        basket_obj = Basket.objects \
+            .prefetch_related('stuff', 'stuff__purchased_stuff') \
+            .filter(uuid=OuterRef('uuid')).annotate(total_amount=Sum('stuff__purchased_stuff__amount')).values('total_amount')
 
         query = Basket.objects \
             .prefetch_related('user', 'stuff', 'stuff__purchased_stuff', 'purchased',
@@ -51,10 +55,10 @@ class BasketApiView(viewsets.ViewSet):
                 subtotal_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
                 subtotal_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
                 subtotal_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
-                subtotal_stuff_looked=F('subtotal_stuff') - F('subtotal_stuff_purchased'),
-                subtotal_amount=Sum('stuff__purchased_stuff__amount'),
                 subtotal_share=Count('share', distinct=True),
                 subtotal_attachment=Count('basket_attachment', distinct=True),
+                subtotal_stuff_looked=F('subtotal_stuff') - F('subtotal_stuff_purchased'),
+                subtotal_amount=Subquery(basket_obj.values('total_amount')[:1]),
                 
                 is_share_with_you=Exists(share_obj),
                 is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
@@ -114,7 +118,7 @@ class BasketApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('subtotal_amount', distinct=True))
+        summary = queryset.aggregate(total_amount=Sum('subtotal_amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
