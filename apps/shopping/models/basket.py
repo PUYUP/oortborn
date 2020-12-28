@@ -317,6 +317,8 @@ class AbstractStuffAttachment(models.Model):
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='stuff_attachment')
     stuff = models.ForeignKey('shopping.Stuff', on_delete=models.CASCADE,
                               related_name='stuff_attachment')
 
@@ -338,6 +340,21 @@ class AbstractStuffAttachment(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def clean(self, *args, **kwargs):
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        ext = None
+        if self.file:
+            name, ext = os.path.splitext(self.file.name)
+
+        if self.image:
+            name, ext = os.path.splitext(self.image.name)
+        
+        if ext:
+            self.mime = ext
+        super().save(*args, **kwargs)
 
 
 class AbstractShare(models.Model):

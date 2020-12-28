@@ -18,11 +18,18 @@ from rest_framework.parsers import MultiPartParser
 
 from utils.generals import get_model
 from utils.pagination import build_result_pagination
-from .serializers import BasketAttachmentSerializer, BasketSerializer, StuffSerializer, ShareSerializer
+from .serializers import (
+    BasketAttachmentSerializer, 
+    BasketSerializer, 
+    StuffAttachmentSerializer, 
+    StuffSerializer, 
+    ShareSerializer
+)
 
 Basket = get_model('shopping', 'Basket')
 BasketAttachment = get_model('shopping', 'BasketAttachment')
 Stuff = get_model('shopping', 'Stuff')
+StuffAttachment = get_model('shopping', 'StuffAttachment')
 Share = get_model('shopping', 'Share')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 
@@ -496,6 +503,78 @@ class StuffApiView(viewsets.ViewSet):
 
         return Response({'detail': _("Delete success!")},
                         status=response_status.HTTP_204_NO_CONTENT)
+
+    # List attachment
+    @method_decorator(never_cache)
+    @transaction.atomic
+    @action(methods=['get', 'post'], detail=True, 
+            permission_classes=[IsAuthenticated],
+            parser_classes=[MultiPartParser],
+            url_path='attachments', 
+            url_name='attachment')
+    def list_attachment(self, request, uuid=None):
+        context = {'request': request}
+        method = request.method
+
+        if method == 'GET':
+            queryset = self.get_object(uuid=uuid).stuff_attachment \
+                .prefetch_related('user', 'stuff') \
+                .select_related('user', 'stuff')
+
+            queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
+            serializer = StuffAttachmentSerializer(queryset_paginator, many=True, context=context)
+            pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
+            return Response(pagination_result, status=response_status.HTTP_200_OK)
+
+        if method == 'POST':
+            serializer = StuffAttachmentSerializer(data=request.data, context=context)
+            if serializer.is_valid(raise_exception=True):
+                try:
+                    serializer.save()
+                except ValidationError as e:
+                    return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+                return Response(serializer.data, status=response_status.HTTP_200_OK)
+            return Response(serializer.errors, status=response_status.HTTP_400_BAD_REQUEST)
+
+    # UPDATE, DELETE Attachment
+    @method_decorator(never_cache)
+    @transaction.atomic
+    @action(methods=['get', 'patch', 'delete'], detail=True,
+            permission_classes=[IsAuthenticated],
+            parser_classes=[MultiPartParser],
+            url_path='attachments/(?P<attachment_uuid>[^/.]+)', 
+            url_name='attachment')
+    def update_attachment(self, request, uuid=None, attachment_uuid=None):
+        context = {'request': request}
+        method = request.method
+
+        try:
+            queryset = StuffAttachment.objects.select_for_update().get(uuid=attachment_uuid)
+        except ValidationError as e:
+            return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+        except ObjectDoesNotExist:
+            raise NotFound()
+        
+        if method == 'GET':
+            serializer = StuffAttachmentSerializer(queryset, context=context)
+            return Response(serializer.data, status=response_status.HTTP_200_OK)
+
+        elif method == 'PATCH':
+            serializer = StuffAttachmentSerializer(queryset, data=request.data, partial=True, context=context)
+            if serializer.is_valid(raise_exception=True):
+                try:
+                    serializer.save()
+                except ValidationError as e:
+                    return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+                return Response(serializer.data, status=response_status.HTTP_200_OK)
+            return Response(serializer.errors, status=response_status.HTTP_400_BAD_REQUEST)
+
+        elif method == 'DELETE':
+            try:
+                queryset.delete(request=request)
+            except ValidationError as e:
+                raise NotAcceptable(detail=' '.join(e))
+            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
 
 
 """

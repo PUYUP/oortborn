@@ -21,25 +21,43 @@ from ..purchased.serializers import PurchasedSerializer, PurchasedStuffSerialize
 Basket = get_model('shopping', 'Basket')
 BasketAttachment = get_model('shopping', 'BasketAttachment')
 Stuff = get_model('shopping', 'Stuff')
+StuffAttachment = get_model('shopping', 'StuffAttachment')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 Share = get_model('shopping', 'Share')
 
 
-def handle_upload_attachment(instance, file):
+def validate_attachment(file):
+    name, ext = os.path.splitext(file.name)
+    fsize = file.size / 1000
+    if fsize > 5000:
+        raise serializers.ValidationError({'detail': _("Ukuran file maksimal 5 MB")})
+
+    if ext != '.jpeg' and ext != '.jpg' and ext != '.png':
+        raise serializers.ValidationError({'detail': _("Jenis file tidak diperbolehkan")})
+
+
+def handle_upload_basket_attachment(instance, file):
     if instance and file:
         name, ext = os.path.splitext(file.name)
-
-        fsize = file.size / 1000
-        if fsize > 5000:
-            raise serializers.ValidationError({'detail': _("Ukuran file maksimal 5 MB")})
-    
-        if ext != '.jpeg' and ext != '.jpg' and ext != '.png':
-            raise serializers.ValidationError({'detail': _("Jenis file tidak diperbolehkan")})
+        validate_attachment(file)
 
         basket = getattr(instance, 'basket')
-        username = basket.user.username
         basket_name = basket.name
-        filename = '{username}_{basket_name}'.format(username=username, basket_name=basket_name)
+        filename = '{basket_name}'.format(basket_name=basket_name)
+        filename_slug = slugify(filename)
+
+        instance.image.save('%s%s' % (filename_slug, ext), file, save=False)
+        instance.save(update_fields=['image'])
+
+
+def handle_upload_stuff_attachment(instance, file):
+    if instance and file:
+        name, ext = os.path.splitext(file.name)
+        validate_attachment(file)
+
+        stuff = getattr(instance, 'stuff')
+        stuff_name = stuff.name
+        filename = '{stuff_name}'.format(stuff_name=stuff_name)
         filename_slug = slugify(filename)
 
         instance.image.save('%s%s' % (filename_slug, ext), file, save=False)
@@ -112,7 +130,7 @@ class BasketAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer
     def create(self, validated_data):
         image = validated_data.pop('image', None)
         obj = BasketAttachment.objects.create(**validated_data)
-        handle_upload_attachment(obj, image)
+        handle_upload_basket_attachment(obj, image)
         return obj
 
 
@@ -178,6 +196,22 @@ class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
 
 class StuffListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
     pass
+
+
+class StuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    stuff = serializers.SlugRelatedField(slug_field='uuid', queryset=Stuff.objects.all())
+
+    class Meta:
+        model = StuffAttachment
+        fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        image = validated_data.pop('image', None)
+        obj = StuffAttachment.objects.create(**validated_data)
+        handle_upload_stuff_attachment(obj, image)
+        return obj
 
 
 class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
