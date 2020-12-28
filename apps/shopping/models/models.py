@@ -108,12 +108,12 @@ if not is_model_registered('shopping', 'PurchasedStuff'):
 
 
 # 12
-if not is_model_registered('shopping', 'TrackLocation'):
-    class TrackLocation(AbstractTrackLocation):
-        class Meta(AbstractTrackLocation.Meta):
-            db_table = 'shopping_track_location'
+if not is_model_registered('shopping', 'PurchasedStuffAttachment'):
+    class PurchasedStuffAttachment(AbstractPurchasedStuffAttachment):
+        class Meta(AbstractPurchasedStuffAttachment.Meta):
+            db_table = 'shopping_purchased_stuff_attachment'
 
-    __all__.append('TrackLocation')
+    __all__.append('PurchasedStuffAttachment')
 
 
 # 13

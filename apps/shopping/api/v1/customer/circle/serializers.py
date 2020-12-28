@@ -6,7 +6,7 @@ Circle = get_model('shopping', 'Circle')
 
 
 class CircleSerializer(serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:circle-detail',
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:circle-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 

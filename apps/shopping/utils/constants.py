@@ -42,7 +42,7 @@ METRIC_CHOICES = (
 WAITING = 'waiting'
 ACCEPT = 'accept'
 REJECT = 'reject'
-SHARE_STATUS = (
+GENERAL_STATUS = (
     (WAITING, _("Menunggu")),
     (ACCEPT, _("Terima")),
     (REJECT, _("Tolak")),

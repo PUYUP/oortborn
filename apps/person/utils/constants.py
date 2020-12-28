@@ -1,9 +1,9 @@
 from django.utils.translation import ugettext_lazy as _
 
 
-BUYER = 'Buyer'
+CUSTOMER = 'Customer'
 OPERATOR = 'Operator'
-DEFAULT_GROUP = BUYER
+DEFAULT_GROUP = CUSTOMER
 
 
 VerifyCode_SESSION_FIELDS = ['uuid', 'token', 'challenge', 'msisdn', 'email', 'info']

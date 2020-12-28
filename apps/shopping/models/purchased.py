@@ -1,4 +1,5 @@
 import uuid
+import os
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -166,7 +167,6 @@ class AbstractPurchasedStuff(models.Model):
     def save(self, *args, **kwargs):
         if self.metric != NOMINAL and self.amount > 0:
             qty = 1
-
             if isinstance(self.quantity, int):
                 qty = int(self.quantity)
             
@@ -176,7 +176,6 @@ class AbstractPurchasedStuff(models.Model):
             self.price = self.amount / qty
         else:
             self.price = self.amount
-
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -188,24 +187,46 @@ class AbstractPurchasedStuff(models.Model):
         super().delete(*args, **kwargs)
 
 
-class AbstractTrackLocation(models.Model):
+class AbstractPurchasedStuffAttachment(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='purchased_stuff_attachment')
     purchased = models.ForeignKey('shopping.Purchased', on_delete=models.CASCADE,
-                                  related_name='track_location')
+                                  related_name='purchased_stuff_attachment')
 
-    name = models.TextField(null=True, blank=True)
-    latitude = models.CharField(max_length=255)
-    longitude = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    file = models.FileField(upload_to='files/purchased-stuff-attachment/', max_length=500,
+                            null=True, blank=True)
+    image = models.FileField(upload_to='images/purchased-stuff-attachment/', max_length=500,
+                             null=True, blank=True)
+    mime = models.CharField(max_length=225)
+    sort = models.IntegerField(default=1)
 
     class Meta:
         abstract = True
         app_label = 'shopping'
         ordering = ['-create_at']
-        verbose_name = _("Track Location")
-        verbose_name_plural = _("Track Locations")
+        verbose_name = _("Purchased Stuff Attachment")
+        verbose_name_plural = _("Purchased Stuff Attachments")
 
     def __str__(self):
         return self.name
+    
+    def clean(self, *args, **kwargs):
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        ext = None
+        if self.file:
+            name, ext = os.path.splitext(self.file.name)
+
+        if self.image:
+            name, ext = os.path.splitext(self.image.name)
+        
+        if ext:
+            self.mime = ext
+        super().save(*args, **kwargs)

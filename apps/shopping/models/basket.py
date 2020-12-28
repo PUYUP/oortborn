@@ -6,7 +6,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
-from ..utils.constants import METRIC_CHOICES, SHARE_STATUS, WAITING
+from ..utils.constants import METRIC_CHOICES, GENERAL_STATUS, WAITING
 
 
 class AbstractBasket(models.Model):
@@ -329,7 +329,7 @@ class AbstractStuffAttachment(models.Model):
     image = models.FileField(upload_to='images/stuff-attachment/', max_length=500,
                              null=True, blank=True)
     mime = models.CharField(max_length=225)
-    is_featured = models.BooleanField(default=False)
+    sort = models.IntegerField(default=1)
 
     class Meta:
         abstract = True
@@ -371,7 +371,7 @@ class AbstractShare(models.Model):
     to_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                 related_name='share_to_user')
     
-    status = models.CharField(choices=SHARE_STATUS, default=WAITING, max_length=15)
+    status = models.CharField(choices=GENERAL_STATUS, default=WAITING, max_length=15)
     sort = models.IntegerField(default=1)
     # all crud allowed (for stuff and basket)
     is_admin = models.BooleanField(default=False)
@@ -462,9 +462,13 @@ class AbstractSchedule(models.Model):
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
-    basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE, related_name='schedule')
-    started_at = models.DateTimeField(auto_now=False)
-    is_notified = models.BooleanField(default=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='schedule')
+    basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
+                               related_name='schedule')
+
+    datetime = models.DateTimeField(auto_now=False)
+    is_remind = models.BooleanField(default=True)
 
     class Meta:
         abstract = True
@@ -474,4 +478,4 @@ class AbstractSchedule(models.Model):
         verbose_name_plural = _("Schedules")
 
     def __str__(self):
-        return self.started_at
+        return self.datetime

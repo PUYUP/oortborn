@@ -71,7 +71,7 @@ class ShareListSerializer(ListSerializerUpdateMappingField, serializers.ListSeri
 class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:share-detail',
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:share-detail',
                                                lookup_field='uuid', read_only=True)
     msisdn = serializers.CharField(read_only=True, source='to_user.account.msisdn')
     username = serializers.CharField(required=False, source='to_user.username')
@@ -141,7 +141,7 @@ class BasketListSerializer(ListSerializerUpdateMappingField, serializers.ListSer
 class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
                        ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:basket-detail',
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:basket-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     purchased = PurchasedSerializer(read_only=True, many=True)
@@ -217,7 +217,7 @@ class StuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer)
 class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:stuff-detail',
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:stuff-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
                                         default=serializers.CurrentUserDefault())

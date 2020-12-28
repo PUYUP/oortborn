@@ -268,7 +268,7 @@ class BasketApiView(viewsets.ViewSet):
             'detail': _("Ada {} item belum dimasukkan harga (Rp 0)".format(amount_empty)),
             'total': total,
             'amount_empty': amount_empty
-        }, status=response_status.HTTP_204_NO_CONTENT)
+        }, status=response_status.HTTP_200_OK)
 
     # List attachment
     @method_decorator(never_cache)

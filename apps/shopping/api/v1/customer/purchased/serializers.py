@@ -1,5 +1,8 @@
+import os
+
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.template.defaultfilters import slugify
 
 from rest_framework import serializers
 
@@ -13,9 +16,34 @@ from utils.mixin.validators import CleanValidateMixin
 
 Purchased = get_model('shopping', 'Purchased')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
+PurchasedStuffAttachment = get_model('shopping', 'PurchasedStuffAttachment')
 Basket = get_model('shopping', 'Basket')
 Stuff = get_model('shopping', 'Stuff')
 User = get_user_model()
+
+
+def validate_attachment(file):
+    name, ext = os.path.splitext(file.name)
+    fsize = file.size / 1000
+    if fsize > 5000:
+        raise serializers.ValidationError({'detail': _("Ukuran file maksimal 5 MB")})
+
+    if ext != '.jpeg' and ext != '.jpg' and ext != '.png':
+        raise serializers.ValidationError({'detail': _("Jenis file tidak diperbolehkan")})
+
+
+def handle_upload_purchased_stuff_attachment(instance, file):
+    if instance and file:
+        name, ext = os.path.splitext(file.name)
+        validate_attachment(file)
+
+        parent = getattr(instance, 'purchased_stuff')
+        name = parent.name
+        filename = '{name}'.format(name=name)
+        filename_slug = slugify(filename)
+
+        instance.image.save('%s%s' % (filename_slug, ext), file, save=False)
+        instance.save(update_fields=['image'])
 
 
 class PurchasedListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
@@ -38,8 +66,24 @@ class PurchasedSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
         return instance
 
 
+class PurchasedStuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    purchased_stuff = serializers.SlugRelatedField(slug_field='uuid', queryset=PurchasedStuff.objects.all())
+
+    class Meta:
+        model = PurchasedStuffAttachment
+        fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        image = validated_data.pop('image', None)
+        obj = PurchasedStuffAttachment.objects.create(**validated_data)
+        handle_upload_purchased_stuff_attachment(obj, image)
+        return obj
+
+
 class PurchasedStuffSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:buyer:purchased_stuff-detail',
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:purchased_stuff-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())

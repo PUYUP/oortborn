@@ -1,18 +1,25 @@
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import viewsets, status as response_status
 from rest_framework.exceptions import NotAcceptable, NotFound
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 
 from utils.generals import get_model
-from .serializers import PurchasedSerializer, PurchasedStuffSerializer
+from utils.pagination import build_result_pagination
+from .serializers import PurchasedSerializer, PurchasedStuffSerializer, PurchasedStuffAttachmentSerializer
 
 Purchased = get_model('shopping', 'Purchased')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
+PurchasedStuffAttachment = get_model('shopping', 'PurchasedStuffAttachment')
+
+# Define to avoid used ...().paginate__
+_PAGINATOR = LimitOffsetPagination()
 
 
 class PurchasedApiView(viewsets.ViewSet):
@@ -185,3 +192,73 @@ class PurchasedStuffApiView(viewsets.ViewSet):
 
         return Response({'detail': _("Delete success!")},
                         status=response_status.HTTP_204_NO_CONTENT)
+
+    # List attachment
+    @transaction.atomic
+    @action(methods=['get', 'post'], detail=True, 
+            permission_classes=[IsAuthenticated],
+            parser_classes=[MultiPartParser],
+            url_path='attachments', 
+            url_name='attachment')
+    def list_attachment(self, request, uuid=None):
+        context = {'request': request}
+        method = request.method
+
+        if method == 'GET':
+            queryset = self.get_object(uuid=uuid).purchased_stuff_attachment \
+                .prefetch_related('user', 'purchased_stuff') \
+                .select_related('user', 'purchased_stuff')
+
+            queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
+            serializer = PurchasedStuffAttachmentSerializer(queryset_paginator, many=True, context=context)
+            pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
+            return Response(pagination_result, status=response_status.HTTP_200_OK)
+
+        if method == 'POST':
+            serializer = PurchasedStuffAttachmentSerializer(data=request.data, context=context)
+            if serializer.is_valid(raise_exception=True):
+                try:
+                    serializer.save()
+                except ValidationError as e:
+                    return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+                return Response(serializer.data, status=response_status.HTTP_200_OK)
+            return Response(serializer.errors, status=response_status.HTTP_400_BAD_REQUEST)
+
+    # UPDATE, DELETE Attachment
+    @transaction.atomic
+    @action(methods=['get', 'patch', 'delete'], detail=True,
+            permission_classes=[IsAuthenticated],
+            parser_classes=[MultiPartParser],
+            url_path='attachments/(?P<attachment_uuid>[^/.]+)', 
+            url_name='attachment')
+    def update_attachment(self, request, uuid=None, attachment_uuid=None):
+        context = {'request': request}
+        method = request.method
+
+        try:
+            queryset = PurchasedStuffAttachment.objects.select_for_update().get(uuid=attachment_uuid)
+        except ValidationError as e:
+            return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+        except ObjectDoesNotExist:
+            raise NotFound()
+        
+        if method == 'GET':
+            serializer = PurchasedStuffAttachmentSerializer(queryset, context=context)
+            return Response(serializer.data, status=response_status.HTTP_200_OK)
+
+        elif method == 'PATCH':
+            serializer = PurchasedStuffAttachmentSerializer(queryset, data=request.data, partial=True, context=context)
+            if serializer.is_valid(raise_exception=True):
+                try:
+                    serializer.save()
+                except ValidationError as e:
+                    return Response({'detail': _(u" ".join(e.messages))}, status=response_status.HTTP_406_NOT_ACCEPTABLE)
+                return Response(serializer.data, status=response_status.HTTP_200_OK)
+            return Response(serializer.errors, status=response_status.HTTP_400_BAD_REQUEST)
+
+        elif method == 'DELETE':
+            try:
+                queryset.delete(request=request)
+            except ValidationError as e:
+                raise NotAcceptable(detail=' '.join(e))
+            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)

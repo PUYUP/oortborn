@@ -98,7 +98,7 @@ class AbstractProductAttachment(models.Model):
     image = models.FileField(upload_to='images/product-attachment/', max_length=500,
                              null=True, blank=True)
     mime = models.CharField(max_length=225)
-    is_featured = models.BooleanField(default=False)
+    sort = models.IntegerField(default=1)
 
     class Meta:
         abstract = True
