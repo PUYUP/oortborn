@@ -205,7 +205,7 @@ class BasketApiView(viewsets.ViewSet):
             raise NotAcceptable(detail=' '.join(e))
 
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)
 
     # Reuse Basket
     @method_decorator(never_cache)
@@ -340,7 +340,7 @@ class BasketApiView(viewsets.ViewSet):
                 queryset.delete(request=request)
             except ValidationError as e:
                 raise NotAcceptable(detail=' '.join(e))
-            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
+            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_200_OK)
 
 
 """
@@ -502,7 +502,7 @@ class StuffApiView(viewsets.ViewSet):
             raise NotAcceptable(detail=' '.join(e))
 
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)
 
     # List attachment
     @method_decorator(never_cache)
@@ -574,7 +574,7 @@ class StuffApiView(viewsets.ViewSet):
                 queryset.delete(request=request)
             except ValidationError as e:
                 raise NotAcceptable(detail=' '.join(e))
-            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
+            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_200_OK)
 
 
 """
@@ -698,4 +698,4 @@ class ShareApiView(viewsets.ViewSet):
             raise NotAcceptable(detail=' '.join(e))
 
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)

@@ -98,4 +98,4 @@ class CircleApiView(viewsets.ViewSet):
 
         queryset.delete()
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)

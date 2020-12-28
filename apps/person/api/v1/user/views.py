@@ -547,7 +547,7 @@ class UserApiView(viewsets.ViewSet):
             url_path='logout', url_name='logout')
     def logout(self, request, uuid=None):
         logout(request)
-        return Response({'detail': _(u"Logout!")}, status=response_status.HTTP_204_NO_CONTENT)
+        return Response({'detail': _(u"Logout!")}, status=response_status.HTTP_200_OK)
 
 
 class TokenObtainPairSerializerExtend(TokenObtainPairSerializer):

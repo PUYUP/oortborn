@@ -119,7 +119,7 @@ class PurchasedApiView(viewsets.ViewSet):
             raise NotAcceptable(detail=' '.join(e))
 
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)
 
 
 class PurchasedStuffApiView(viewsets.ViewSet):
@@ -191,7 +191,7 @@ class PurchasedStuffApiView(viewsets.ViewSet):
             raise NotAcceptable(detail=' '.join(e))
 
         return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_204_NO_CONTENT)
+                        status=response_status.HTTP_200_OK)
 
     # List attachment
     @transaction.atomic
@@ -261,4 +261,4 @@ class PurchasedStuffApiView(viewsets.ViewSet):
                 queryset.delete(request=request)
             except ValidationError as e:
                 raise NotAcceptable(detail=' '.join(e))
-            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_204_NO_CONTENT)
+            return Response({'detail': _("Delete success!")}, status=response_status.HTTP_200_OK)
