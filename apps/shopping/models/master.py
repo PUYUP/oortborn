@@ -62,7 +62,7 @@ class AbstractProductRate(models.Model):
                                         related_name='product_rate', null=True, blank=True)
 
     name = models.CharField(max_length=255)
-    quantity = models.CharField(max_length=255, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=15, decimal_places=5, null=True, blank=True)
     metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None,
                               null=True, blank=True)
     # price divided by amount and quantity

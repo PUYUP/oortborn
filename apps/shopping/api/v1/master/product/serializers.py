@@ -1,3 +1,5 @@
+import math
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -26,3 +28,17 @@ class ProductRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductRate
         fields = '__all__'
+
+    def to_representation(self, instance):
+        quantity = instance.quantity
+        frac, whole = math.modf(instance.quantity)
+        quantity_fmt = frac + whole
+
+        if (quantity_fmt % 1 > 0):
+            quantity = quantity_fmt
+        else:
+            quantity = int(quantity_fmt)
+
+        data = super().to_representation(instance)
+        data['quantity'] = quantity
+        return data

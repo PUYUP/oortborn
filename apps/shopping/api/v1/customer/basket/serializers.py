@@ -1,4 +1,5 @@
 import os
+import math
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -234,7 +235,21 @@ class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     def get_is_creator(self, obj):
         request = self.context.get('request')
         return request.user.id == obj.user.id
-    
+
+    def to_representation(self, instance):
+        quantity = instance.quantity
+        frac, whole = math.modf(instance.quantity)
+        quantity_fmt = frac + whole
+
+        if (quantity_fmt % 1 > 0):
+            quantity = quantity_fmt
+        else:
+            quantity = int(quantity_fmt)
+
+        data = super().to_representation(instance)
+        data['quantity'] = quantity
+        return data
+
     def to_internal_value(self, data):
         self.purchased_stuff = data.pop('purchased_stuff', None)
         return super().to_internal_value(data)

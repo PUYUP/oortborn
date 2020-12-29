@@ -98,7 +98,7 @@ class AbstractPurchasedStuff(models.Model):
                                   related_name='purchased_stuff')
 
     name = models.CharField(max_length=255, null=True, blank=True)
-    quantity = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=15, decimal_places=5)
     metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None)
     # price divided by amount and quantity
     # eg: amount 6000 / quantity 6 = 1000
@@ -166,14 +166,7 @@ class AbstractPurchasedStuff(models.Model):
 
     def save(self, *args, **kwargs):
         if self.metric != NOMINAL and self.amount > 0:
-            qty = 1
-            if isinstance(self.quantity, int):
-                qty = int(self.quantity)
-            
-            if isinstance(self.quantity, float):
-                qty = float(self.quantity)
-    
-            self.price = self.amount / qty
+            self.price = self.amount / self.quantity
         else:
             self.price = self.amount
         super().save(*args, **kwargs)

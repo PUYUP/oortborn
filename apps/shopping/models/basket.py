@@ -195,7 +195,7 @@ class AbstractStuff(models.Model):
                                 null=True, blank=True, related_name='stuff')
 
     name = models.CharField(max_length=255)
-    quantity = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=15, decimal_places=5)
     metric = models.CharField(max_length=15, choices=METRIC_CHOICES)
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
