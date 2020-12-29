@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import slugify
 
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from utils.generals import get_model
 from utils.mixin.validators import CleanValidateMixin
@@ -252,6 +252,17 @@ class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
 
     def to_internal_value(self, data):
         self.purchased_stuff = data.pop('purchased_stuff', None)
+        if self.purchased_stuff is not None:
+            # Validate amount
+            amount = self.purchased_stuff.get('amount', 0)
+            if amount <= 0:
+                raise ValidationError({'amount': _("Harga tidak boleh kurang dari nol")})
+            
+            # Validate quantity
+            quantity = self.purchased_stuff.get('quantity', 0)
+            if quantity <= 0:
+                raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+
         return super().to_internal_value(data)
 
     @transaction.atomic

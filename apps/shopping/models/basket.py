@@ -277,6 +277,7 @@ class AbstractStuff(models.Model):
     def clean(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         if self.request is not None:
+            self.quantity = self.request.data.get('quantity', 0)
             self.current_user = self.request.user
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
 
@@ -284,6 +285,11 @@ class AbstractStuff(models.Model):
                 self.check_can_update()
             else:
                 self.check_can_add()
+
+        # Validate quantity
+        if self.quantity <= 0:
+            raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+        return super().clean()
 
     def save(self, *args, **kwargs):
         if self.basket.is_complete:

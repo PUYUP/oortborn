@@ -155,6 +155,10 @@ class AbstractPurchasedStuff(models.Model):
     def clean(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         if self.request:
+            self.quantity = self.request.data.get('quantity', 0)
+            self.amount = self.request.data.get('amount', 0)
+            self.price = self.request.data.get('price', 0)
+
             self.current_user = self.request.user
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
 
@@ -162,6 +166,16 @@ class AbstractPurchasedStuff(models.Model):
                 self.check_can_update()
             else:
                 self.check_can_add()
+
+        # Validation
+        if self.quantity <= 0:
+            raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+
+        if self.price == 0 and self.amount <= 0:
+            raise ValidationError({'amount': _("Total harga tidak boleh kurang dari nol")})
+
+        if self.amount == 0 and self.price <= 0:
+            raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
         return super().clean()
 
     def save(self, *args, **kwargs):

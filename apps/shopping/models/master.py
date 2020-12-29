@@ -1,4 +1,5 @@
 import uuid
+from django.core.exceptions import ValidationError
 
 from django.db import models
 from django.conf import settings
@@ -81,6 +82,15 @@ class AbstractProductRate(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def clean(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        if self.request:
+            self.quantity = self.request.data.get('quantity', 0)
+
+        if self.quantity <= 0:
+            raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+        return super().clean()
 
 
 class AbstractProductAttachment(models.Model):
