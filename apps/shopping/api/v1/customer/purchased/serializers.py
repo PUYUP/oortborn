@@ -54,7 +54,8 @@ class PurchasedListSerializer(ListSerializerUpdateMappingField, serializers.List
 class PurchasedSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
                           ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
-    user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all())
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all(),
+                                        default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Purchased
@@ -86,7 +87,8 @@ class PurchasedStuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSe
 class PurchasedStuffSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:purchased_stuff-detail',
                                                lookup_field='uuid', read_only=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all(),
+                                        default=serializers.CurrentUserDefault())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
     purchased = serializers.SlugRelatedField(slug_field='uuid', queryset=Purchased.objects.all())
     stuff = serializers.SlugRelatedField(slug_field='uuid', queryset=Stuff.objects.all())

@@ -78,7 +78,8 @@ class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     msisdn = serializers.CharField(read_only=True, source='to_user.account.msisdn')
     username = serializers.CharField(required=False, source='to_user.username')
     first_name = serializers.CharField(read_only=True, source='to_user.first_name')
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
+                                        default=serializers.CurrentUserDefault())
     to_user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(), required=False)
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
 
@@ -145,7 +146,8 @@ class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:basket-detail',
                                                lookup_field='uuid', read_only=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
+                                        default=serializers.CurrentUserDefault())
     purchased = PurchasedSerializer(read_only=True, many=True)
     share = ShareSerializer(read_only=True, many=True,
                                      fields=['uuid', 'status', 'is_admin', 'is_can_crud',
