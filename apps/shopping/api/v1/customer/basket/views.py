@@ -51,7 +51,8 @@ class BasketApiView(viewsets.ViewSet):
         date = self.request.query_params.get('date', None)
         share_obj = Share.objects.filter(basket__uuid=OuterRef('uuid'), to_user_id=self.request.user.id)
         basket_obj = Basket.objects \
-            .prefetch_related('stuff', 'stuff__purchased_stuff') \
+            .prefetch_related('stuff', 'stuff__purchased_stuff', 'user') \
+            .select_related('user') \
             .filter(uuid=OuterRef('uuid')).annotate(total_amount=Sum('stuff__purchased_stuff__amount')).values('total_amount')
 
         query = Basket.objects \
@@ -224,8 +225,8 @@ class BasketApiView(viewsets.ViewSet):
             location = basket.location
             stuffs = basket.stuff \
                 .prefetch_related('basket', 'product', 'purchased_stuff', 'purchased_stuff__purchased',
-                                  'purchased_stuff__basket') \
-                .select_related('basket', 'product')
+                                  'purchased_stuff__basket', 'user') \
+                .select_related('basket', 'product', 'user')
                 
             # Create new basket
             basket_new = Basket.objects.create(user=request.user, name=name, note=note, location=location)
@@ -589,8 +590,8 @@ class ShareApiView(viewsets.ViewSet):
 
     def queryset(self):
         query = Share.objects \
-            .prefetch_related('to_user', 'to_user__account', 'basket') \
-            .select_related('to_user', 'basket') \
+            .prefetch_related('to_user', 'to_user__account', 'basket', 'user') \
+            .select_related('to_user', 'basket', 'user') \
             .filter(Q(user__uuid=self.request.user.uuid)
                     | Q(to_user_id=self.request.user.id))
 
