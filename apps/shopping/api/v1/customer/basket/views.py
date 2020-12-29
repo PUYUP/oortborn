@@ -3,10 +3,12 @@ from dateutil import parser
 from django.db import transaction
 from django.db.models import Count, Sum, Q, F, Exists, Subquery, OuterRef, Case, When, IntegerField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db.models.expressions import Value
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
+from django.db.models.functions import Coalesce
 
 from rest_framework import viewsets, status as response_status
 from rest_framework.exceptions import NotAcceptable, NotFound, ValidationError as ValidationErrorResponse
@@ -65,7 +67,7 @@ class BasketApiView(viewsets.ViewSet):
                 subtotal_share=Count('share', distinct=True),
                 subtotal_attachment=Count('basket_attachment', distinct=True),
                 subtotal_stuff_looked=F('subtotal_stuff') - F('subtotal_stuff_purchased'),
-                subtotal_amount=Subquery(basket_obj.values('total_amount')[:1]),
+                subtotal_amount=Coalesce(Subquery(basket_obj.values('total_amount')[:1]), Value(0)),
                 
                 is_share_with_you=Exists(share_obj),
                 is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
@@ -265,7 +267,7 @@ class BasketApiView(viewsets.ViewSet):
         amount_empty = queryset.filter(amount=0).count()
 
         return Response({
-            'detail': _("Ada {} item belum dimasukkan harga (Rp 0)".format(amount_empty)),
+            'detail': _("{} item belum ada harga".format(amount_empty)),
             'total': total,
             'amount_empty': amount_empty
         }, status=response_status.HTTP_200_OK)

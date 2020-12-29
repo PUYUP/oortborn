@@ -158,6 +158,7 @@ class AbstractPurchasedStuff(models.Model):
             self.quantity = self.request.data.get('quantity', 0)
             self.amount = self.request.data.get('amount', 0)
             self.price = self.request.data.get('price', 0)
+            self.is_found = self.request.data.get('is_found', False)
 
             self.current_user = self.request.user
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
@@ -168,14 +169,20 @@ class AbstractPurchasedStuff(models.Model):
                 self.check_can_add()
 
         # Validation
-        if self.quantity <= 0:
-            raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+        if self.is_found:
+            if self.quantity <= 0:
+                raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+            
+            # Jika belum purchased masih boleh nol
+            if self.request and not self.pk:
+                pass
+            else:
+                if self.price == 0 and self.amount <= 0:
+                    raise ValidationError({'amount': _("Total harga tidak boleh kurang dari nol")})
 
-        if self.price == 0 and self.amount <= 0:
-            raise ValidationError({'amount': _("Total harga tidak boleh kurang dari nol")})
+                if self.amount == 0 and self.price <= 0:
+                    raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
 
-        if self.amount == 0 and self.price <= 0:
-            raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
         return super().clean()
 
     def save(self, *args, **kwargs):
@@ -183,6 +190,12 @@ class AbstractPurchasedStuff(models.Model):
             self.price = self.amount / self.quantity
         else:
             self.price = self.amount
+        
+        # Set price and amount to 0 if not found
+        if not self.is_found:
+            self.price = 0
+            self.amount = 0
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

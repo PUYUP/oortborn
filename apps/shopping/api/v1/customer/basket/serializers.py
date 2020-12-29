@@ -6,6 +6,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ValidationError
@@ -186,9 +187,12 @@ class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     def update(self, instance, validated_data):
         request = self.context.get('request')
 
+        instance.complete_at = timezone.now()
+        instance.completed_by = request.user
+
         # If not creator limit update some fields
         if request.user.uuid != instance.user.uuid:
-            instance.save(update_fields=['is_complete'])
+            instance.save(update_fields=['is_complete', 'completed_by'])
         else:
             instance.save()
 
@@ -254,15 +258,16 @@ class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     def to_internal_value(self, data):
         self.purchased_stuff = data.pop('purchased_stuff', None)
         if self.purchased_stuff is not None:
-            # Validate amount
-            amount = self.purchased_stuff.get('amount', 0)
-            if amount <= 0:
-                raise ValidationError({'amount': _("Harga tidak boleh kurang dari nol")})
-            
-            # Validate quantity
-            quantity = self.purchased_stuff.get('quantity', 0)
-            if quantity <= 0:
-                raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+            is_found = self.purchased_stuff.get('is_found', False)
+            if is_found:
+                amount = self.purchased_stuff.get('amount', 0)
+                quantity = self.purchased_stuff.get('quantity', 0)
+
+                if amount <= 0:
+                    raise ValidationError({'amount': _("Harga tidak boleh kurang dari nol")})
+
+                if quantity <= 0:
+                    raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
 
         return super().to_internal_value(data)
 

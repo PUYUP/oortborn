@@ -15,7 +15,10 @@ class AbstractBasket(models.Model):
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='basket')
+                             related_name='basket_user')
+    completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                     related_name='basket_completed_by', null=True, 
+                                     blank=True)
 
     name = models.CharField(max_length=255)
     note = models.TextField(null=True, blank=True)
