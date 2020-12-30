@@ -32,8 +32,8 @@ class ShareExtend(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'basket':
             kwargs['queryset'] = Basket.objects \
-                .prefetch_related('user') \
-                .select_related('user')
+                .prefetch_related('user', 'completed_by') \
+                .select_related('user', 'completed_by')
         
         if db_field.name == 'circle':
             kwargs['queryset'] = Circle.objects \
@@ -66,8 +66,8 @@ class PurchasedExtend(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'basket':
             kwargs['queryset'] = Basket.objects \
-                .prefetch_related('user') \
-                .select_related('user')
+                .prefetch_related('user', 'completed_by') \
+                .select_related('user', 'completed_by')
         
         if db_field.name == 'user':
             kwargs['queryset'] = get_user_model().objects \
@@ -90,8 +90,8 @@ class PurchasedStuffExtend(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'basket':
             kwargs['queryset'] = Basket.objects \
-                .prefetch_related('user') \
-                .select_related('user')
+                .prefetch_related('user', 'completed_by') \
+                .select_related('user', 'completed_by')
 
         if db_field.name == 'stuff':
             kwargs['queryset'] = Stuff.objects \

@@ -1,7 +1,7 @@
 import uuid
 import os
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
@@ -280,16 +280,18 @@ class AbstractStuff(models.Model):
     def clean(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         if self.request is not None:
-            self.quantity = self.request.data.get('quantity', 0)
             self.current_user = self.request.user
-            self.share = self.basket.share.filter(to_user_id=self.current_user.id)
+            self.quantity = self.request.data.get('quantity', 0)
+            
+            if hasattr(self, 'basket'):
+                self.share = self.basket.share.filter(to_user_id=self.current_user.id)
 
-            if self.pk:
-                self.check_can_update()
-            else:
-                self.check_can_add()
-
-        # Validate quantity
+                if self.pk:
+                    self.check_can_update()
+                else:
+                    self.check_can_add()
+        
+        # Quantity can't zero or lower
         if self.quantity <= 0:
             raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
         return super().clean()

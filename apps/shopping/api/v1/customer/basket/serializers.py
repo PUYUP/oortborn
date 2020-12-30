@@ -16,7 +16,8 @@ from utils.mixin.validators import CleanValidateMixin
 from utils.mixin.api import (
     DynamicFieldsModelSerializer, 
     ExcludeFieldsModelSerializer, 
-    ListSerializerUpdateMappingField
+    ListSerializerUpdateMappingField, 
+    WritetableFieldPutMethod
 )
 from ..purchased.serializers import PurchasedSerializer, PurchasedStuffSerializer
 
@@ -70,7 +71,7 @@ class ShareListSerializer(ListSerializerUpdateMappingField, serializers.ListSeri
     pass
 
 
-class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+class ShareSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:share-detail',
@@ -121,86 +122,6 @@ class ShareSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
         return super().update(instance, validated_data)
 
 
-class BasketAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
-
-    class Meta:
-        model = BasketAttachment
-        fields = '__all__'
-
-    @transaction.atomic
-    def create(self, validated_data):
-        image = validated_data.pop('image', None)
-        obj = BasketAttachment.objects.create(**validated_data)
-        handle_upload_basket_attachment(obj, image)
-        return obj
-
-
-class BasketListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
-    pass
-
-
-class BasketSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
-                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
-    uuid = serializers.UUIDField(required=False)
-    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:basket-detail',
-                                               lookup_field='uuid', read_only=True)
-    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
-                                        default=serializers.CurrentUserDefault())
-    purchased = PurchasedSerializer(read_only=True, many=True)
-    share = ShareSerializer(read_only=True, many=True,
-                                     fields=['uuid', 'status', 'is_admin', 'is_can_crud',
-                                             'is_can_buy', 'to_user', 'url'])
-
-    first_name = serializers.CharField(read_only=True, source='user.first_name')
-    subtotal_stuff = serializers.IntegerField(read_only=True)
-    subtotal_stuff_purchased = serializers.IntegerField(read_only=True)
-    subtotal_stuff_found = serializers.IntegerField(read_only=True)
-    subtotal_stuff_notfound = serializers.IntegerField(read_only=True)
-    subtotal_stuff_looked = serializers.IntegerField(read_only=True)
-    subtotal_amount = serializers.IntegerField(read_only=True)
-    subtotal_share = serializers.IntegerField(read_only=True)
-    subtotal_attachment = serializers.IntegerField(read_only=True)
-    
-    is_creator = serializers.SerializerMethodField(read_only=True)
-    is_share_with_you = serializers.BooleanField(read_only=True)
-    is_share_uuid = serializers.UUIDField(read_only=True)
-    is_share_sort = serializers.IntegerField(read_only=True)
-    """
-    is_share_status = serializers.CharField(read_only=True)
-    is_share_admin = serializers.BooleanField(read_only=True)
-    is_share_can_crud = serializers.BooleanField(read_only=True)
-    is_share_can_read = serializers.BooleanField(read_only=True)
-    is_share_can_buy = serializers.BooleanField(read_only=True)
-    """
-    sorted = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Basket
-        fields = '__all__'
-        list_serializer_class = BasketListSerializer
-
-    def get_is_creator(self, obj):
-        request = self.context.get('request')
-        return request.user.id == obj.user.id
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        request = self.context.get('request')
-
-        instance.complete_at = timezone.now()
-        instance.completed_by = request.user
-
-        # If not creator limit update some fields
-        if request.user.uuid != instance.user.uuid:
-            instance.save(update_fields=['is_complete', 'completed_by'])
-        else:
-            instance.save()
-
-        return super().update(instance, validated_data)
-
-
 class StuffListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
     pass
 
@@ -221,7 +142,7 @@ class StuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSerializer)
         return obj
 
 
-class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
                       ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:stuff-detail',
@@ -297,3 +218,104 @@ class StuffSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
 
         instance.refresh_from_db()
         return instance
+
+
+class BasketAttachmentSerializer(CleanValidateMixin, WritetableFieldPutMethod,
+                                 serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
+
+    class Meta:
+        model = BasketAttachment
+        fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        image = validated_data.pop('image', None)
+        obj = BasketAttachment.objects.create(**validated_data)
+        handle_upload_basket_attachment(obj, image)
+        return obj
+
+
+class BasketListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
+    pass
+
+
+class BasketSerializer(DynamicFieldsModelSerializer, ExcludeFieldsModelSerializer,
+                       CleanValidateMixin, serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
+    url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:basket-detail',
+                                               lookup_field='uuid', read_only=True)
+    user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
+                                        default=serializers.CurrentUserDefault())
+    purchased = PurchasedSerializer(read_only=True, many=True)
+    stuff = StuffSerializer(many=True, write_only=True, required=False, exclude_fields=['basket'])
+    share = ShareSerializer(read_only=True, many=True,
+                            fields=['uuid', 'status', 'is_admin', 'is_can_crud',
+                                    'is_can_buy', 'to_user', 'url'])
+
+    first_name = serializers.CharField(read_only=True, source='user.first_name')
+    subtotal_stuff = serializers.IntegerField(read_only=True)
+    subtotal_stuff_purchased = serializers.IntegerField(read_only=True)
+    subtotal_stuff_found = serializers.IntegerField(read_only=True)
+    subtotal_stuff_notfound = serializers.IntegerField(read_only=True)
+    subtotal_stuff_looked = serializers.IntegerField(read_only=True)
+    subtotal_amount = serializers.IntegerField(read_only=True)
+    subtotal_share = serializers.IntegerField(read_only=True)
+    subtotal_attachment = serializers.IntegerField(read_only=True)
+    
+    is_creator = serializers.SerializerMethodField(read_only=True)
+    is_share_with_you = serializers.BooleanField(read_only=True)
+    is_share_uuid = serializers.UUIDField(read_only=True)
+    is_share_sort = serializers.IntegerField(read_only=True)
+    """
+    is_share_status = serializers.CharField(read_only=True)
+    is_share_admin = serializers.BooleanField(read_only=True)
+    is_share_can_crud = serializers.BooleanField(read_only=True)
+    is_share_can_read = serializers.BooleanField(read_only=True)
+    is_share_can_buy = serializers.BooleanField(read_only=True)
+    """
+    sorted = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Basket
+        fields = '__all__'
+        list_serializer_class = BasketListSerializer
+
+    def get_is_creator(self, obj):
+        request = self.context.get('request')
+        return request.user.id == obj.user.id
+
+    @transaction.atomic
+    def create(self, validated_data):
+        stuffs = validated_data.pop('stuff', None)
+        instance = Basket.objects.create(**validated_data)
+
+        # create stuffs
+        if stuffs and instance:
+            stuffs_obj = []
+            for item in stuffs:
+                stuff_obj = Stuff(basket=instance, **item)
+                stuffs_obj.append(stuff_obj)
+            
+            try:
+                Stuff.objects.bulk_create(stuffs_obj, ignore_conflicts=False)
+            except Exception as e:
+                raise ValidationError(detail=str(e))
+
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+
+        instance.complete_at = timezone.now()
+        instance.completed_by = request.user
+
+        # If not creator limit update some fields
+        if request.user.uuid != instance.user.uuid:
+            instance.save(update_fields=['is_complete', 'completed_by'])
+        else:
+            instance.save()
+
+        return super().update(instance, validated_data)

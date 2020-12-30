@@ -11,7 +11,8 @@ from utils.generals import get_model
 from utils.mixin.api import (
     DynamicFieldsModelSerializer, 
     ExcludeFieldsModelSerializer, 
-    ListSerializerUpdateMappingField
+    ListSerializerUpdateMappingField, 
+    WritetableFieldPutMethod
 )
 from utils.mixin.validators import CleanValidateMixin
 
@@ -51,7 +52,7 @@ class PurchasedListSerializer(ListSerializerUpdateMappingField, serializers.List
     pass
 
 
-class PurchasedSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+class PurchasedSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
                           ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
     user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all(),
@@ -84,7 +85,8 @@ class PurchasedStuffAttachmentSerializer(CleanValidateMixin, serializers.ModelSe
         return obj
 
 
-class PurchasedStuffSerializer(CleanValidateMixin, ExcludeFieldsModelSerializer, serializers.ModelSerializer):
+class PurchasedStuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, ExcludeFieldsModelSerializer,
+                               serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='shopping_api:customer:purchased_stuff-detail',
                                                lookup_field='uuid', read_only=True)
     user = serializers.SlugRelatedField(slug_field='uuid', queryset=User.objects.all(),

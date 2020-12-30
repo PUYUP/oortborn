@@ -51,15 +51,15 @@ class BasketApiView(viewsets.ViewSet):
         date = self.request.query_params.get('date', None)
         share_obj = Share.objects.filter(basket__uuid=OuterRef('uuid'), to_user_id=self.request.user.id)
         basket_obj = Basket.objects \
-            .prefetch_related('stuff', 'stuff__purchased_stuff', 'user') \
-            .select_related('user') \
+            .prefetch_related('stuff', 'stuff__purchased_stuff', 'user', 'completed_by') \
+            .select_related('user', 'completed_by') \
             .filter(uuid=OuterRef('uuid')).annotate(total_amount=Sum('stuff__purchased_stuff__amount')).values('total_amount')
 
         query = Basket.objects \
             .prefetch_related('user', 'stuff', 'stuff__purchased_stuff', 'purchased',
                               'purchased__basket', 'purchased__user', 'purchased__schedule',
-                              'share', 'share__to_user', 'share__basket') \
-            .select_related('user') \
+                              'share', 'share__to_user', 'share__basket', 'completed_by') \
+            .select_related('user', 'completed_by') \
             .annotate(
                 subtotal_stuff=Count('stuff', distinct=True),
                 subtotal_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
@@ -132,7 +132,7 @@ class BasketApiView(viewsets.ViewSet):
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
-                                      exclude_fields=['share', 'purchased'])
+                                      exclude_fields=['share', 'purchased', 'stuff'])
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
         pagination_result['summary'] = summary
         return Response(pagination_result, status=response_status.HTTP_200_OK)
