@@ -281,8 +281,7 @@ class AbstractStuff(models.Model):
         self.request = kwargs.pop('request', None)
         if self.request is not None:
             self.current_user = self.request.user
-            self.quantity = self.request.data.get('quantity', 0)
-            
+
             if hasattr(self, 'basket'):
                 self.share = self.basket.share.filter(to_user_id=self.current_user.id)
 

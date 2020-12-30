@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 from rest_framework import viewsets, status as response_status
 from rest_framework.exceptions import NotAcceptable, NotFound
@@ -154,6 +156,7 @@ class PurchasedStuffApiView(viewsets.ViewSet):
         serializer = PurchasedStuffSerializer(queryset, many=False, context=context)
         return Response(serializer.data, status=response_status.HTTP_200_OK)
 
+    @method_decorator(never_cache)
     @transaction.atomic
     def create(self, request, format=None):
         context = {'request': request}
@@ -166,6 +169,7 @@ class PurchasedStuffApiView(viewsets.ViewSet):
             return Response(serializer.data, status=response_status.HTTP_201_CREATED)
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
 
+    @method_decorator(never_cache)
     @transaction.atomic
     def partial_update(self, request, uuid=None, format=None):
         context = {'request': request}
