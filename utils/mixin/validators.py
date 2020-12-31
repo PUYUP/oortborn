@@ -1,4 +1,4 @@
-from django.forms.models import model_to_dict
+from django.db.models.query import QuerySet
 from rest_framework import serializers
 
 
@@ -14,12 +14,21 @@ class CleanValidateMixin(serializers.ModelSerializer):
 
         # add current instance value
         if self.instance:
-            y = {t.name: getattr(self.instance, t.name) for t in self.instance._meta.fields}
-            for x in y:
-                v = attr.get(x)
-                if v or v == 0:
-                    y[x] = v
-            attr = y
+            if isinstance(self.instance, QuerySet):
+                for item in self.instance:
+                    y = {t.name: getattr(item, t.name) for t in item._meta.fields}
+                    for x in list(y):
+                        v = attr.get(x)
+                        if v or v == 0:
+                            y[x] = v
+                    attr = y
+            else:
+                y = {t.name: getattr(self.instance, t.name) for t in self.instance._meta.fields}
+                for x in list(y):
+                    v = attr.get(x)
+                    if v or v == 0:
+                        y[x] = v
+                attr = y
 
         instance = self.Meta.model(**attr)
         if hasattr(instance, 'clean'):
