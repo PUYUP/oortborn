@@ -14,8 +14,7 @@ class CleanValidateMixin(serializers.ModelSerializer):
 
         # add current instance value
         if self.instance:
-            d = self.instance.__dict__
-            y = {t: d.get(t) for t in d if not t.startswith('_')}
+            y = {t.name: getattr(self.instance, t.name) for t in self.instance._meta.fields}
             for x in y:
                 v = attr.get(x)
                 if v or v == 0:
