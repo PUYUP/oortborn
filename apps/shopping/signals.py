@@ -22,13 +22,14 @@ def purchased_save_handler(sender, instance, created, **kwargs):
 
 @transaction.atomic
 def purchased_stuff_save_handler(sender, instance, created, **kwargs):
+    basket = instance.basket
+    stuff = instance.stuff
+
     if created:
         purchased = instance.purchased
         purchased_user = purchased.user
-        basket = instance.basket
         basket_user = basket.user
-        stuff = instance.stuff
-
+    
         # If basket creator and purchased user same, mark stuff is_done!
         # Ini akan digunakan untuk fitur operator dimana customer mengecek
         # apakah semua item sudah terbeli dengan menandai sebagai 'is_done'
@@ -46,6 +47,14 @@ def purchased_stuff_save_handler(sender, instance, created, **kwargs):
                            metric=instance.metric, submitter=basket_user,
                            purchased_stuff=instance, is_private=instance.is_private)
     else:
+        original_is_found = None
+        if not instance._state.adding:
+            original_is_found = instance._loaded_values.get('is_found')
+
+        if original_is_found == False and original_is_found != instance.is_found and basket.is_complete:
+            stuff.is_additional = True
+            stuff.save(update_fields=['is_additional'])
+
         product_rate = getattr(instance, 'product_rate').last()
         if product_rate:
             product_rate.price = instance.price

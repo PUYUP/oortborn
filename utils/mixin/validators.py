@@ -13,6 +13,7 @@ class CleanValidateMixin(serializers.ModelSerializer):
         }
 
         # add current instance value
+        """
         if self.instance:
             if isinstance(self.instance, QuerySet):
                 for item in self.instance:
@@ -29,9 +30,17 @@ class CleanValidateMixin(serializers.ModelSerializer):
                     if v or v == 0:
                         y[x] = v
                 attr = y
+        """
 
-        instance = self.Meta.model(**attr)
-        if hasattr(instance, 'clean'):
-            instance.clean(request=request)
+        if not self.instance:
+            instance = self.Meta.model(**attr)
+            if hasattr(instance, 'clean'):
+                instance.clean(request=request)
+        else:
+            if isinstance(self.instance, QuerySet):
+                for item in self.instance:
+                    item.clean(request=request)
+            else:
+                self.instance.clean(request=request)
 
         return attrs

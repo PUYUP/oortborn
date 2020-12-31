@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.db.models import DEFERRED
 
 from ..utils.constants import METRIC_CHOICES, NOMINAL
 
@@ -122,6 +123,16 @@ class AbstractPurchasedStuff(models.Model):
             return self.name
         return self.stuff.name
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        
+        # save original values, when model is loaded from database,
+        # in a separate attribute on the model
+        instance._loaded_values = dict(zip(field_names, values))
+        
+        return instance
+
     def check_can_add(self):
         """ Jika current user bukan creator Basket cek boleh membeli atau tidak """
         if self.basket.user.uuid != self.current_user.uuid:
@@ -136,12 +147,18 @@ class AbstractPurchasedStuff(models.Model):
         Kecuali jika stuff is_additional = True
         """
 
+        # ambil is_found lama (dari database)
+        original_is_found = None
+        if not self._state.adding:
+            original_is_found = self._loaded_values.get('is_found')
+
         if self.user.uuid != self.current_user.uuid:
             is_can_buy = self.share.filter(is_can_buy=True).exists()
             if not self.share.exists() or not is_can_buy:
                 raise ValidationError({'detail': _("Tidak diizinkan merubah {}".format(self.stuff.name))})
         
-        if self.basket.is_complete and not self.stuff.is_additional and self.is_found:
+        # jika state asli original_is_found is True maka tidak bisa edit
+        if self.basket.is_complete and not self.stuff.is_additional and original_is_found:
             raise ValidationError({'detail': _("Merubah pembelian {} tidak diperbolehkan".format(self.stuff.name))})
     
     def check_can_delete(self):
@@ -157,7 +174,7 @@ class AbstractPurchasedStuff(models.Model):
         if self.request:
             self.current_user = self.request.user
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
-
+            
             if self.pk:
                 self.check_can_update()
             else:
