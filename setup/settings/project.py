@@ -28,7 +28,7 @@ LOGIN_URL = '/person/login/'
 
 # Application definition
 PROJECT_APPS = [
-    #'channels',
+    'channels',
     'corsheaders',
     'rest_framework',
     'apps.person.apps.PersonConfig',
