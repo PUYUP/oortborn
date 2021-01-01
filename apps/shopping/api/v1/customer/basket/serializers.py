@@ -200,9 +200,8 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
         basket = validated_data.get('basket')
         instance = Stuff.objects.create(**validated_data)
 
-        # Execute only after basket mark is_complete
         # This handle user add additional stuff
-        if instance and basket.is_complete and self.purchased_stuff:
+        if instance and basket and self.purchased_stuff:
             # Remove this params because wee need the object from this param
             self.purchased_stuff.pop('basket')
             self.purchased_stuff.pop('purchased')
@@ -212,7 +211,9 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
             PurchasedStuff.objects.create(user=request.user, stuff=instance, basket=basket,
                                           purchased=purchased, **self.purchased_stuff)
             
-            instance.is_additional = True
+            if basket.is_complete:
+                instance.is_additional = True
+
             instance.is_purchased = True
             instance.save()
 
