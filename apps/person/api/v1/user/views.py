@@ -73,7 +73,7 @@ class UserApiView(viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (AllowAny,)
     permission_action = {
-        # 'list': [IsAuthenticated],
+        'list': [IsAuthenticated],
         'retrieve': [IsAuthenticated],
         'partial_update': [IsAuthenticated, IsCurrentUserOrReject],
     }
