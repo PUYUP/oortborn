@@ -220,20 +220,22 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
 
     def validate_password(self, value):
         instance = getattr(self, 'instance', dict())
+
+        # make sure password filled
+        if not self.password1 or not self.password2:
+            raise serializers.ValidationError(_(u"Password tidak boleh kosong"))
+        
+        if self.password1 != self.password2:
+            raise serializers.ValidationError(_(u"Password tidak sama"))
+
+        try:
+            validate_password(self.password2)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        
+        # change password, instance = user object
         if instance:
             username = getattr(instance, 'username', None)
-
-            # make sure new and old password filled
-            if not self.password1 or not self.password2:
-                raise serializers.ValidationError(_(u"Password lama dan baru wajib"))
-            
-            if self.password1 != self.password2:
-                raise serializers.ValidationError(_(u"Password lama dan baru tidak sama"))
-
-            try:
-                validate_password(self.password2)
-            except ValidationError as e:
-                raise serializers.ValidationError(e.messages)
 
             # check current password is passed
             passed = authenticate(username=username, password=self.password)

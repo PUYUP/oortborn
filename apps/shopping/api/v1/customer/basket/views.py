@@ -48,14 +48,16 @@ class BasketApiView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def queryset(self):
-        date = self.request.query_params.get('date', None)
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+
         share_obj = Share.objects.filter(basket__uuid=OuterRef('uuid'), to_user_id=self.request.user.id)
         basket_obj = Basket.objects \
             .prefetch_related('stuff', 'stuff__purchased_stuff', 'user', 'completed_by') \
             .select_related('user', 'completed_by') \
             .filter(uuid=OuterRef('uuid')).annotate(total_amount=Sum('stuff__purchased_stuff__amount')).values('total_amount')
 
-        query = Basket.objects \
+        queryset = Basket.objects \
             .prefetch_related('user', 'stuff', 'stuff__purchased_stuff', 'purchased',
                               'purchased__basket', 'purchased__user', 'purchased__schedule',
                               'share', 'share__to_user', 'share__basket', 'completed_by') \
@@ -91,27 +93,31 @@ class BasketApiView(viewsets.ViewSet):
                 | Q(share__to_user_id=self.request.user.id)
             )
 
-        if date:
-            dt = parser.parse(date)
-            my_datetime = timezone.make_aware(dt, timezone.get_current_timezone())
-            query = query.filter(create_at__gte=my_datetime)
+        if start_date and end_date:
+            dt_start = parser.parse(start_date)
+            dt_start_fmt = timezone.make_aware(dt_start, timezone.get_current_timezone())
 
-        return query
+            dt_end = parser.parse(end_date)
+            dt_end_fmt = timezone.make_aware(dt_end, timezone.get_current_timezone())
+
+            queryset = queryset.filter(create_at__range=(dt_start_fmt, dt_end_fmt))
+
+        return queryset
 
     def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
+        queryset = self.queryset()
 
         try:
             if is_update:
-                query = query.select_for_update().get(uuid=uuid)
+                queryset = queryset.select_for_update().get(uuid=uuid)
             else:
-                query = query.get(uuid=uuid)
+                queryset = queryset.get(uuid=uuid)
         except ObjectDoesNotExist:
             raise NotFound()
         except ValidationError as e:
             raise ValidationErrorResponse(detail=str(e))
 
-        return query
+        return queryset
 
     def list(self, request, format=None):
         context = {'request': request}
@@ -355,7 +361,7 @@ class StuffApiView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def queryset(self):
-        query = Stuff.objects \
+        queryset = Stuff.objects \
             .prefetch_related('basket', 'basket__share', 'product', 'purchased_stuff',
                               'purchased_stuff__purchased', 'purchased_stuff__basket', 
                               'purchased_stuff__user', 'user') \
@@ -366,38 +372,43 @@ class StuffApiView(viewsets.ViewSet):
                 | Q(basket__share__to_user_id=self.request.user.id)
             ).distinct()
         
-        return query
+        return queryset
 
     def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
+        queryset = self.queryset()
 
         try:
             if is_update:
-                query = query.select_for_update().get(uuid=uuid)
+                queryset = queryset.select_for_update().get(uuid=uuid)
             else:
-                query = query.get(uuid=uuid)
+                queryset = queryset.get(uuid=uuid)
         except ObjectDoesNotExist:
             raise NotFound()
         except ValidationError as e:
             raise ValidationErrorResponse(detail=str(e))
 
-        return query
+        return queryset
 
     def list(self, request, format=None):
         context = {'request': request}
         status = request.query_params.get('status', None)
         amount = request.query_params.get('amount', None)
         basket_uuid = request.query_params.get('basket_uuid', None)
-        date = request.query_params.get('date', None)
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
         keyword = request.query_params.get('keyword', None)
         is_history = request.query_params.get('is_history', 'false')
 
         queryset = self.queryset()
 
-        if date:
-            dt = parser.parse(date)
-            my_datetime = timezone.make_aware(dt, timezone.get_current_timezone())
-            queryset = queryset.filter(create_at__gte=my_datetime)
+        if start_date and end_date:
+            dt_start = parser.parse(start_date)
+            dt_start_fmt = timezone.make_aware(dt_start, timezone.get_current_timezone())
+
+            dt_end = parser.parse(end_date)
+            dt_end_fmt = timezone.make_aware(dt_end, timezone.get_current_timezone())
+
+            queryset = queryset.filter(create_at__range=(dt_start_fmt, dt_end_fmt))
     
         if amount:
             amount_int = int(amount)
@@ -589,28 +600,28 @@ class ShareApiView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def queryset(self):
-        query = Share.objects \
+        queryset = Share.objects \
             .prefetch_related('to_user', 'to_user__account', 'basket', 'user') \
             .select_related('to_user', 'basket', 'user') \
             .filter(Q(user__uuid=self.request.user.uuid)
                     | Q(to_user_id=self.request.user.id))
 
-        return query
+        return queryset
 
     def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
+        queryset = self.queryset()
 
         try:
             if is_update:
-                query = query.select_for_update().get(uuid=uuid)
+                queryset = queryset.select_for_update().get(uuid=uuid)
             else:
-                query = query.get(uuid=uuid)
+                queryset = queryset.get(uuid=uuid)
         except ObjectDoesNotExist:
             raise NotFound()
         except ValidationError as e:
             raise ValidationErrorResponse(detail=str(e))
 
-        return query
+        return queryset
 
     def list(self, request, format=None):
         context = {'request': request}
