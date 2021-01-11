@@ -118,7 +118,8 @@ class BasketApiView(viewsets.ViewSet):
         return queryset
 
     def list(self, request, format=None):
-        q_ordered, q_complete, q_keyword = Q(), Q(), Q()
+        q_ordered, q_keyword = Q(), Q()
+        q_complete = Q(is_complete=False)
 
         context = {'request': request}
         state = request.query_params.getlist('state')
