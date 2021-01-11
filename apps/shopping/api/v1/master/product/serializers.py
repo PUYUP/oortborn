@@ -3,14 +3,15 @@ import math
 from django.db import transaction
 from rest_framework import serializers
 
-from utils.generals import get_model
+from utils.generals import get_model, quantity_format
 
 Product = get_model('shopping', 'Product')
 ProductRate = get_model('shopping', 'ProductRate')
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    submitter = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    uuid = serializers.UUIDField(read_only=True)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Product
@@ -23,23 +24,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductRateSerializer(serializers.ModelSerializer):
-    submitter = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = ProductRate
         fields = '__all__'
 
     def to_representation(self, instance):
-        quantity = instance.quantity
-        if quantity:
-            frac, whole = math.modf(instance.quantity)
-            quantity_fmt = frac + whole
-
-            if (quantity_fmt % 1 > 0):
-                quantity = quantity_fmt
-            else:
-                quantity = int(quantity_fmt)
-
-        data = super().to_representation(instance)
-        data['quantity'] = quantity
-        return data
+        ret = super().to_representation(instance)
+        ret['quantity'] = instance.quantity_format
+        ret['metric_display'] = instance.get_metric_display()
+        return ret

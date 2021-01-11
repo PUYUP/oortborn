@@ -58,10 +58,8 @@ class BasketApiView(viewsets.ViewSet):
             .filter(uuid=OuterRef('uuid')).annotate(total_amount=Sum('stuff__purchased_stuff__amount')).values('total_amount')
 
         queryset = Basket.objects \
-            .prefetch_related('user', 'stuff', 'stuff__purchased_stuff', 'purchased',
-                              'purchased__basket', 'purchased__user', 'purchased__schedule',
-                              'share', 'share__to_user', 'share__basket', 'completed_by') \
-            .select_related('user', 'completed_by') \
+            .prefetch_related('user', 'completed_by', 'order') \
+            .select_related('user', 'completed_by', 'order') \
             .annotate(
                 subtotal_stuff=Count('stuff', distinct=True),
                 subtotal_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
@@ -120,25 +118,30 @@ class BasketApiView(viewsets.ViewSet):
         return queryset
 
     def list(self, request, format=None):
+        q_ordered, q_complete, q_keyword = Q(), Q(), Q()
+
         context = {'request': request}
-        is_complete = request.query_params.get('is_complete')
+        state = request.query_params.getlist('state')
         keyword = request.query_params.get('keyword')
         queryset = self.queryset().order_by('sorted')
 
-        if is_complete == 'true':
-            queryset = queryset.filter(is_complete=True)
-        elif is_complete == 'false':
-            queryset = queryset.filter(is_complete=False)
+        if 'ordered' in state:
+            q_ordered = Q(is_ordered=True)
 
+        if 'complete' in state:
+            q_complete = Q(is_complete=True)
+        
         if keyword:
-            queryset = queryset.filter(name__icontains=keyword)
+            q_keyword = Q(name__icontains=keyword)
+        
+        queryset = queryset.filter(q_ordered, q_complete, q_keyword)
 
         # Calculate total ampunt
         summary = queryset.aggregate(total_amount=Sum('subtotal_amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
-                                      exclude_fields=['share', 'purchased', 'stuff'])
+                                      exclude_fields=['share', 'purchased', 'stuff', 'order'])
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
         pagination_result['summary'] = summary
         return Response(pagination_result, status=response_status.HTTP_200_OK)
@@ -248,7 +251,7 @@ class BasketApiView(viewsets.ViewSet):
                     location = getattr(item, 'location')
 
                     obj = Stuff(user=request.user, basket=basket_new, product=product, metric=metric,
-                                   quantity=quantity, name=name, note=note, location=location)
+                                quantity=quantity, name=name, note=note, location=location)
                     bulk_stuffs.append(obj)
                 
                 if bulk_stuffs:
@@ -362,7 +365,7 @@ class StuffApiView(viewsets.ViewSet):
 
     def queryset(self):
         queryset = Stuff.objects \
-            .prefetch_related('basket', 'basket__share', 'product', 'purchased_stuff',
+            .prefetch_related('basket', 'product', 'purchased_stuff',
                               'purchased_stuff__purchased', 'purchased_stuff__basket', 
                               'purchased_stuff__user', 'user') \
             .select_related('basket', 'product', 'user') \
@@ -397,7 +400,7 @@ class StuffApiView(viewsets.ViewSet):
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
         keyword = request.query_params.get('keyword', None)
-        is_history = request.query_params.get('is_history', 'false')
+        is_history = request.query_params.get('is_history', None)
 
         queryset = self.queryset()
 
@@ -418,7 +421,7 @@ class StuffApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
 
         if is_history == 'true':
-            queryset = queryset.filter(purchased_stuff__isnull=False)
+            queryset = queryset.filter(purchased_stuff__isnull=False, basket__is_complete=True)
 
         # Calculate total ampunt
         summary = queryset.aggregate(total_amount=Sum('purchased_stuff__amount'))

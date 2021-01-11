@@ -3,8 +3,10 @@ from django.contrib.auth import get_user_model
 
 from utils.generals import get_model
 
+Category = get_model('shopping', 'Category')
 Brand = get_model('shopping', 'Brand')
 Product = get_model('shopping', 'Product')
+ProductMetric = get_model('shopping', 'ProductMetric')
 ProductRate = get_model('shopping', 'ProductRate')
 ProductAttachment = get_model('shopping', 'ProductAttachment')
 Basket = get_model('shopping', 'Basket')
@@ -17,6 +19,18 @@ Purchased = get_model('shopping', 'Purchased')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 Circle = get_model('shopping', 'Circle')
 CircleMember = get_model('shopping', 'CircleMember')
+
+Order = get_model('shopping', 'Order')
+OrderLine = get_model('shopping', 'OrderLine')
+OrderSchedule = get_model('shopping', 'OrderSchedule')
+OrderDelivery = get_model('shopping', 'OrderDelivery')
+Invoice = get_model('shopping', 'Invoice')
+InvoiceLine = get_model('shopping', 'InvoiceLine')
+ShippingAddress = get_model('shopping', 'ShippingAddress')
+ShippingMethod = get_model('shopping', 'ShippingMethod')
+Assign = get_model('shopping', 'Assign')
+AssignTracking = get_model('shopping', 'AssignTracking')
+AssignLog = get_model('shopping', 'AssignLog')
 
 
 class ShareExtend(admin.ModelAdmin):
@@ -106,9 +120,105 @@ class PurchasedStuffExtend(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class ProductRateInline(admin.StackedInline):
+    model = ProductRate
+    ordering = ['-create_at']
+    max_num = 3
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request) \
+            .prefetch_related('user', 'product', 'purchased_stuff') \
+            .select_related('user', 'product', 'purchased_stuff')
+
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = get_user_model().objects \
+                .prefetch_related('account', 'profile') \
+                .select_related('account', 'profile')
+
+        if db_field.name == 'purchased_stuff':
+            kwargs['queryset'] = PurchasedStuff.objects \
+                .prefetch_related('user', 'basket', 'stuff', 'purchased') \
+                .select_related('user', 'basket', 'stuff', 'purchased')
+
+        if db_field.name == 'product':
+            kwargs['queryset'] = Product.objects \
+                .prefetch_related('user', 'brand') \
+                .select_related('user', 'brand')
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class ProductAttachmentInline(admin.StackedInline):
+    model = ProductAttachment
+    ordering = ['-create_at']
+    max_num = 3
+
+
+class ProductMetricInline(admin.StackedInline):
+    model = ProductMetric
+    ordering = ['-create_at']
+
+
+class ProductExtend(admin.ModelAdmin):
+    model = Product
+    inlines = [ProductMetricInline, ProductRateInline, ProductAttachmentInline,]
+    search_fields = ['name',]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request) \
+            .prefetch_related('user', 'product_rate', 'product_metric') \
+            .select_related('user')
+
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = get_user_model().objects \
+                .prefetch_related('account', 'profile') \
+                .select_related('account', 'profile')
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class ProductRateExtend(admin.ModelAdmin):
+    model = ProductRate
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = get_user_model().objects \
+                .prefetch_related('account', 'profile') \
+                .select_related('account', 'profile')
+
+        if db_field.name == 'purchased_stuff':
+            kwargs['queryset'] = PurchasedStuff.objects \
+                .prefetch_related('user', 'basket', 'stuff', 'purchased') \
+                .select_related('user', 'basket', 'stuff', 'purchased')
+
+        if db_field.name == 'product':
+            kwargs['queryset'] = Product.objects \
+                .prefetch_related('user', 'brand', 'category') \
+                .select_related('user', 'brand', 'category')
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class AssignInline(admin.StackedInline):
+    model = Assign
+
+
+class OrderExtend(admin.ModelAdmin):
+    model = Product
+    inlines = [AssignInline,]
+
+
+admin.site.register(Category)
 admin.site.register(Brand)
-admin.site.register(Product)
-admin.site.register(ProductRate)
+admin.site.register(Product, ProductExtend)
+admin.site.register(ProductMetric)
+admin.site.register(ProductRate, ProductRateExtend)
 admin.site.register(ProductAttachment)
 admin.site.register(Basket)
 admin.site.register(BasketAttachment)
@@ -120,3 +230,15 @@ admin.site.register(Purchased, PurchasedExtend)
 admin.site.register(PurchasedStuff, PurchasedStuffExtend)
 admin.site.register(Circle)
 admin.site.register(CircleMember)
+
+admin.site.register(Order, OrderExtend)
+admin.site.register(OrderLine)
+admin.site.register(OrderSchedule)
+admin.site.register(OrderDelivery)
+admin.site.register(Invoice)
+admin.site.register(InvoiceLine)
+admin.site.register(ShippingAddress)
+admin.site.register(ShippingMethod)
+admin.site.register(Assign)
+admin.site.register(AssignTracking)
+admin.site.register(AssignLog)

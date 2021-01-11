@@ -2,7 +2,7 @@ from django.utils.translation import ugettext_lazy as _
 
 
 CUSTOMER = 'Customer'
-OPERATOR = 'Operator'
+ASSISTANT = 'Assistant'
 DEFAULT_GROUP = CUSTOMER
 
 

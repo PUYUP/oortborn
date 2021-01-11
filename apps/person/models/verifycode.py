@@ -78,7 +78,7 @@ class AbstractVerifyCode(models.Model):
                              null=True, blank=True, related_name='verifycode')
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     # part from user
@@ -169,6 +169,8 @@ class AbstractVerifyCode(models.Model):
                 raise ValidationError(
                     {'challenge': _(u"%s is not a valid choice." % self.get_challenge_display())}
                 )
+                
+        return super().clean()
 
     def validate(self):
         if self.is_used:

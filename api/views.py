@@ -34,6 +34,12 @@ class RootApiView(APIView):
                                        format=format, current_app='shopping'),
                     'shares': reverse('shopping_api:customer:share-list', request=request,
                                           format=format, current_app='shopping'),
+                    'orders': reverse('shopping_api:customer:order-list', request=request,
+                                      format=format, current_app='shopping'),
+                    'order-lines': reverse('shopping_api:customer:order_line-list', request=request,
+                                           format=format, current_app='shopping'),
+                    'order-schedules': reverse('shopping_api:customer:order_schedule-list', request=request,
+                                               format=format, current_app='shopping'),
                 },
                 'master': {
                     'products': reverse('shopping_api:master:product-list', request=request,

@@ -1,8 +1,9 @@
 import itertools
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import never_cache
+from django.http import request
+from django.utils.encoding import smart_str
 
 from rest_framework import serializers
 
@@ -103,3 +104,19 @@ class ListSerializerUpdateMappingField(serializers.ListSerializer):
                 obj.delete()
 
         return ret
+
+
+class CreatableSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        request = self.context.get('request')
+        queryset = self.get_queryset()
+        model = queryset.model
+
+        try:
+            instance, _created = model.objects \
+                .get_or_create(**{self.slug_field: data}, defaults={'user': request.user})
+            return instance
+        except ObjectDoesNotExist:
+            self.fail('does_not_exist', slug_name=self.slug_field, value=smart_str(data))
+        except (TypeError, ValueError):
+            self.fail('invalid')

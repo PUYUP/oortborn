@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 
-GROUPS = ["Customer", "Operator"]
+GROUPS = ["Customer", "Assistant"]
 
 
 class Command(BaseCommand):

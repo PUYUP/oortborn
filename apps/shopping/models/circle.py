@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 
 class AbstractCircle(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
@@ -27,7 +27,7 @@ class AbstractCircle(models.Model):
 
 class AbstractCircleMember(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     circle = models.ForeignKey('shopping.Circle', on_delete=models.CASCADE,

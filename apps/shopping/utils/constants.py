@@ -39,11 +39,39 @@ METRIC_CHOICES = (
 )
 
 
-WAITING = 'waiting'
-ACCEPT = 'accept'
-REJECT = 'reject'
+WAITING, ACCEPT, REJECT, DONE = 'waiting', 'accept', 'reject', 'done'
 GENERAL_STATUS = (
     (WAITING, _("Menunggu")),
     (ACCEPT, _("Terima")),
     (REJECT, _("Tolak")),
+    (DONE, _("Selesai")),
+)
+
+
+SENT, PAID, OVERDUE = 'sent', 'paid', 'overdue'
+INVOICE_STATUS = (
+    (SENT, _("Sent")),
+    (PAID, _("Paid")),
+    (OVERDUE, _("Overdue")),
+)
+
+
+PERCENTAGE, FIXED, NONE = None, 'percentage', 'fixed'
+DISCOUNT_TYPE = (
+    (NONE, _("None")),
+    (PERCENTAGE, _("Percentage")),
+    (FIXED, _("Fixed")),
+)
+
+
+AMOUNT, LINE = 'amount', 'line'
+SPENT_TYPE = (
+    (AMOUNT, _("Amount")),
+    (LINE, _("Line")),
+)
+
+CAR, MOTORCYCLE = 'car', 'motorcycle'
+VEHICLE_CHOICE = (
+    (CAR, _("Car")),
+    (MOTORCYCLE, _("Motorcycle")),
 )

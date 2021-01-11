@@ -1,3 +1,4 @@
+from utils.generals import quantity_format
 import uuid
 import os
 
@@ -5,27 +6,28 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.db.models import DEFERRED
 
 from ..utils.constants import METRIC_CHOICES, NOMINAL
+from utils.validators import non_python_keyword, identifier_validator
 
 
 class AbstractPurchased(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='purchased')
+                               related_name='purchased', db_index=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='purchased_user')
+                             related_name='purchased_user', db_index=True)
     schedule = models.ForeignKey('shopping.Schedule', on_delete=models.SET_NULL,
-                                 related_name='purchased', null=True, blank=True)
+                                 related_name='purchased', null=True, blank=True, 
+                                 db_index=True)
 
-    started_at = models.DateTimeField(auto_now=False, blank=True, null=True)
-    complete_at = models.DateTimeField(auto_now=False, blank=True, null=True)
-    is_ongoing = models.BooleanField(default=True)
-    is_complete = models.BooleanField(default=False)
+    started_at = models.DateTimeField(auto_now=False, blank=True, null=True, db_index=True)
+    complete_at = models.DateTimeField(auto_now=False, blank=True, null=True, db_index=True)
+    is_ongoing = models.BooleanField(default=True, db_index=True)
+    is_complete = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         abstract = True
@@ -38,12 +40,15 @@ class AbstractPurchased(models.Model):
         return self.basket.name
     
     def check_can_add(self):
-        """ Jika current user bukan creator Basket cek boleh membeli atau tidak """
+        """ 
+        Jika current user bukan creator Basket cek boleh membeli atau tidak 
+        Jika Basket sudah dikirim ke operator maka pembelian sendiri tidak diperbolehkan
+        """
         if self.basket.user.uuid != self.current_user.uuid:
             is_can_buy = self.share.filter(is_can_buy=True).exists()
             if not self.share.exists() or not is_can_buy:
                 raise ValidationError({'detail': _("Tidak diizinkan melakukan pembelian")})
-    
+
     def check_can_update(self):
         """ Jika current user bukan creator maka tidak boleh update """
         if self.user.uuid != self.current_user.uuid:
@@ -53,8 +58,14 @@ class AbstractPurchased(models.Model):
         """ Hanya bisa dihapus oleh creator """
         if self.user.uuid != self.current_user.uuid:
             raise ValidationError("Tidak diizinkan menghapus")
+        
+        if self.basket.is_ordered:
+            raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tidak bisa dihapus")})
 
     def clean(self, *args, **kwargs):
+        if self.pk and self.basket.is_ordered:
+            raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak")})
+
         self.request = kwargs.pop('request', None)
         if self.request:
             self.current_user = self.request.user
@@ -73,7 +84,7 @@ class AbstractPurchased(models.Model):
             self.current_user = self.request.user
             self.check_can_delete()
 
-        super().delete(*args, **kwargs)
+        super().delete()
 
 
 class AbstractPurchasedStuff(models.Model):
@@ -86,21 +97,22 @@ class AbstractPurchasedStuff(models.Model):
     Andi memodifikasi / membatalkan pembelian Budi
     """
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='purchased_stuff')
+                             related_name='purchased_stuff', db_index=True)
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='purchased_stuff')
+                               related_name='purchased_stuff', db_index=True)
     stuff = models.OneToOneField('shopping.Stuff', on_delete=models.CASCADE,
-                                 related_name='purchased_stuff')
+                                 related_name='purchased_stuff', db_index=True)
     purchased = models.ForeignKey('shopping.Purchased', on_delete=models.CASCADE,
-                                  related_name='purchased_stuff')
+                                  related_name='purchased_stuff', db_index=True)
 
-    name = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     quantity = models.DecimalField(max_digits=15, decimal_places=5)
-    metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None)
+    metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None,
+                              validators=[identifier_validator, non_python_keyword])
     # price divided by amount and quantity
     # eg: amount 6000 / quantity 6 = 1000
     price = models.BigIntegerField(default=0)
@@ -108,8 +120,8 @@ class AbstractPurchasedStuff(models.Model):
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     # True = item available, False = item un-available, None = no action
-    is_found = models.BooleanField(default=None, null=True)
-    is_private = models.BooleanField(default=False, null=True)
+    is_found = models.BooleanField(default=None, null=True, db_index=True)
+    is_private = models.BooleanField(default=False, null=True, db_index=True)
 
     class Meta:
         abstract = True
@@ -122,6 +134,12 @@ class AbstractPurchasedStuff(models.Model):
         if self.name:
             return self.name
         return self.stuff.name
+
+    @property
+    def quantity_format(self):
+        if self.quantity:
+            return quantity_format(quantity=self.quantity)
+        return self.quantity
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -170,6 +188,9 @@ class AbstractPurchasedStuff(models.Model):
             raise ValidationError(_("Menghapus pembelian {} tidak diperbolehkan".format(self.stuff.name)))
 
     def clean(self, *args, **kwargs):
+        if self.pk and self.basket.is_ordered:
+            raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak")})
+
         self.request = kwargs.pop('request', None)
         if self.request:
             self.current_user = self.request.user
@@ -184,7 +205,7 @@ class AbstractPurchasedStuff(models.Model):
         if self.is_found:
             if self.quantity <= 0:
                 raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
-            
+
             # Jika belum purchased masih boleh nol
             # jika sudah purchased tidak boleh nol atau kurang
             if self.request and self.pk:
@@ -212,18 +233,18 @@ class AbstractPurchasedStuff(models.Model):
             self.current_user = self.request.user
             self.check_can_delete()
 
-        super().delete(*args, **kwargs)
+        super().delete()
 
 
 class AbstractPurchasedStuffAttachment(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='purchased_stuff_attachment')
     purchased = models.ForeignKey('shopping.Purchased', on_delete=models.CASCADE,
-                                  related_name='purchased_stuff_attachment')
+                                  related_name='purchased_stuff_attachment', db_index=True)
 
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)

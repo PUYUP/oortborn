@@ -1,35 +1,42 @@
 import uuid
 import os
 
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from ..utils.constants import METRIC_CHOICES, GENERAL_STATUS, WAITING
+from utils.validators import non_python_keyword, identifier_validator
+from utils.generals import quantity_format
 
 
 class AbstractBasket(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='basket_user')
+                             related_name='basket_user', db_index=True)
     completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                      related_name='basket_completed_by', null=True, 
-                                     blank=True)
+                                     blank=True, db_index=True)
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     # general sort
-    sort = models.IntegerField(default=1)
+    sort = models.IntegerField(default=1, db_index=True)
     # sort after complete
-    complete_sort = models.IntegerField(default=1)
+    complete_sort = models.IntegerField(default=1, db_index=True)
     complete_at = models.DateTimeField(auto_now=False, blank=True, null=True)
-    is_complete = models.BooleanField(default=False)
-    is_purchased = models.BooleanField(default=False)
+
+    is_complete = models.BooleanField(default=False, db_index=True)
+    is_purchased = models.BooleanField(default=False, db_index=True)
+    # True = send to assistant
+    # False = buy self
+    # Null = no action (fresh order)
+    is_ordered = models.BooleanField(default=None, null=True, db_index=True)
 
     class Meta:
         abstract = True
@@ -55,10 +62,16 @@ class AbstractBasket(models.Model):
 
     def check_can_delete(self):
         """ Hanya creatro boleh menghapus """
+        if self.is_ordered:
+            raise ValidationError(_("Sudah dikirim ke Asisten Belanja tidak bisa dihapus".format(self.name)))
+
         if self.user.uuid != self.current_user.uuid:
             raise ValidationError(_("Tidak boleh menghapus {}".format(self.name)))
         
     def clean(self, *args, **kwargs):
+        if self.pk and self.is_ordered:
+            raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak".format(self.name))})
+
         self.request = kwargs.get('request', None)
         if self.request:
             self.current_user = self.request.user
@@ -80,18 +93,18 @@ class AbstractBasket(models.Model):
             self.current_user = self.request.user
             self.check_can_delete()
     
-        super().delete(*args, **kwargs)
+        super().delete()
 
 
 class AbstractBasketAttachment(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='basket_attachment')
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='basket_attachment')
+                               related_name='basket_attachment', db_index=True)
 
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
@@ -169,7 +182,7 @@ class AbstractBasketAttachment(models.Model):
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
             self.check_can_delete()
     
-        super().delete(*args, **kwargs)
+        super().delete()
 
     def save(self, *args, **kwargs):
         ext = None
@@ -187,26 +200,27 @@ class AbstractBasketAttachment(models.Model):
 
 class AbstractStuff(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='stuff')
+                             related_name='stuff', db_index=True)
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='stuff')
+                               related_name='stuff', db_index=True)
     product = models.ForeignKey('shopping.Product', on_delete=models.SET_NULL,
                                 null=True, blank=True, related_name='stuff')
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     quantity = models.DecimalField(max_digits=15, decimal_places=5)
-    metric = models.CharField(max_length=15, choices=METRIC_CHOICES)
+    metric = models.CharField(max_length=15, choices=METRIC_CHOICES,
+                              validators=[identifier_validator, non_python_keyword])
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
-    sort = models.IntegerField(default=1)
+    sort = models.IntegerField(default=1, db_index=True)
     done_at = models.DateTimeField(auto_now=False, blank=True, null=True)
-    is_done = models.BooleanField(default=False)
+    is_done = models.BooleanField(default=False, db_index=True)
     # Basket has complete and user add more Stuff, so mark as additional
-    is_additional = models.BooleanField(default=False)
+    is_additional = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         abstract = True
@@ -225,6 +239,12 @@ class AbstractStuff(models.Model):
         else:
             return None
 
+    @property
+    def quantity_format(self):
+        if self.quantity:
+            return quantity_format(quantity=self.quantity)
+        return self.quantity
+    
     def check_can_add(self):
         """
         Jika current user bukan creator Basket
@@ -264,6 +284,9 @@ class AbstractStuff(models.Model):
         tapi hanya berlaku jika yang beli bukan creator
         Jika current user bukan creator, cek Share is_admin baru boleh menghapus
         """
+        if self.basket.is_ordered:
+            raise ValidationError(_("Sudah dikirim ke Asisten Belanja tidak bisa dihapus"))
+
         purchased_stuff = self.get_purchased_stuff
         if purchased_stuff is not None:
             if purchased_stuff.user.uuid != self.current_user.uuid:
@@ -278,6 +301,9 @@ class AbstractStuff(models.Model):
             raise ValidationError(_("Menghapus item {} setelah belanja selesai tidak diperbolehkan".format(self.name)))
 
     def clean(self, *args, **kwargs):
+        if self.pk and self.basket.is_ordered:
+            raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak".format(self.name))})
+
         self.request = kwargs.pop('request', None)
         if self.request is not None:
             self.current_user = self.request.user
@@ -312,7 +338,7 @@ class AbstractStuff(models.Model):
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
             self.check_can_delete()
     
-        super().delete(*args, **kwargs)
+        super().delete()
 
     @property
     def is_found(self):
@@ -324,13 +350,13 @@ class AbstractStuff(models.Model):
 
 class AbstractStuffAttachment(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='stuff_attachment')
     stuff = models.ForeignKey('shopping.Stuff', on_delete=models.CASCADE,
-                              related_name='stuff_attachment')
+                              related_name='stuff_attachment', db_index=True)
 
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
@@ -369,19 +395,20 @@ class AbstractStuffAttachment(models.Model):
 
 class AbstractShare(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='share_user')
+                             related_name='share_user', db_index=True)
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='share')
+                               related_name='share', db_index=True)
     circle = models.ForeignKey('shopping.Circle', on_delete=models.CASCADE,
                                related_name='share', null=True, blank=True)
     to_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                                related_name='share_to_user')
+                                related_name='share_to_user', db_index=True)
     
-    status = models.CharField(choices=GENERAL_STATUS, default=WAITING, max_length=15)
+    status = models.CharField(choices=GENERAL_STATUS, default=WAITING, max_length=15,
+                              validators=[identifier_validator, non_python_keyword])
     sort = models.IntegerField(default=1)
     # all crud allowed (for stuff and basket)
     is_admin = models.BooleanField(default=False)
@@ -460,7 +487,7 @@ class AbstractShare(models.Model):
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
             self.check_can_delete()
     
-        super().delete(*args, **kwargs)
+        super().delete()
 
     @property
     def basket_owner(self):
@@ -469,16 +496,16 @@ class AbstractShare(models.Model):
 
 class AbstractSchedule(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name='schedule')
     basket = models.ForeignKey('shopping.Basket', on_delete=models.CASCADE,
-                               related_name='schedule')
+                               related_name='schedule', db_index=True)
 
-    datetime = models.DateTimeField(auto_now=False)
-    is_remind = models.BooleanField(default=True)
+    datetime = models.DateTimeField(auto_now=False, db_index=True)
+    is_remind = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         abstract = True

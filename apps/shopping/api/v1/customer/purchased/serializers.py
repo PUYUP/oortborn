@@ -3,6 +3,7 @@ import math
 
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 
 from rest_framework import serializers
@@ -49,7 +50,11 @@ def handle_upload_purchased_stuff_attachment(instance, file):
 
 
 class PurchasedListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
-    pass
+    def to_representation(self, data):
+        if isinstance(data, QuerySet) and data.exists():
+            data = data.prefetch_related('user', 'schedule', 'basket') \
+                .select_related('user', 'schedule', 'basket')
+        return super().to_representation(data)
 
 
 class PurchasedSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
@@ -106,16 +111,7 @@ class PurchasedStuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, Exc
         return request.user.id == obj.user.id
 
     def to_representation(self, instance):
-        quantity = instance.quantity
-        if quantity:
-            frac, whole = math.modf(instance.quantity)
-            quantity_fmt = frac + whole
-
-            if (quantity_fmt % 1 > 0):
-                quantity = quantity_fmt
-            else:
-                quantity = int(quantity_fmt)
-
-        data = super().to_representation(instance)
-        data['quantity'] = quantity
-        return data
+        ret = super().to_representation(instance)
+        ret['quantity'] = instance.quantity_format
+        ret['metric_display'] = instance.get_metric_display()
+        return ret

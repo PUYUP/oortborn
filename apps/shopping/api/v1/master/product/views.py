@@ -28,8 +28,8 @@ class ProductApiView(viewsets.ViewSet):
 
     def queryset(self):
         query = Product.objects \
-            .prefetch_related('brand') \
-            .select_related('brand') \
+            .prefetch_related('brand', 'user') \
+            .select_related('brand', 'user') \
             .values('name') \
             .annotate(product_count=Count('name')) \
             .order_by('name') \

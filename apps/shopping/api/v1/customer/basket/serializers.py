@@ -4,6 +4,7 @@ import math
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import slugify
 from django.utils import timezone
@@ -11,15 +12,16 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ValidationError
 
-from utils.generals import get_model
+from utils.generals import get_model, quantity_format
 from utils.mixin.validators import CleanValidateMixin
 from utils.mixin.api import (
-    DynamicFieldsModelSerializer, 
+    CreatableSlugRelatedField, DynamicFieldsModelSerializer, 
     ExcludeFieldsModelSerializer, 
     ListSerializerUpdateMappingField, 
     WritetableFieldPutMethod
 )
 from ..purchased.serializers import PurchasedSerializer, PurchasedStuffSerializer
+from ..order.serializers import OrderSerializer
 
 Basket = get_model('shopping', 'Basket')
 BasketAttachment = get_model('shopping', 'BasketAttachment')
@@ -27,6 +29,7 @@ Stuff = get_model('shopping', 'Stuff')
 StuffAttachment = get_model('shopping', 'StuffAttachment')
 PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 Share = get_model('shopping', 'Share')
+Product = get_model('shopping', 'Product')
 
 
 def validate_attachment(file):
@@ -68,7 +71,11 @@ def handle_upload_stuff_attachment(instance, file):
 
 
 class ShareListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
-    pass
+    def to_representation(self, data):
+        if isinstance(data, QuerySet) and data.exists():
+            data = data.prefetch_related('user', 'to_user', 'basket') \
+                .select_related('user', 'to_user', 'basket')
+        return super().to_representation(data)
 
 
 class ShareSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
@@ -149,6 +156,7 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
                                                lookup_field='uuid', read_only=True)
     user = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
                                         default=serializers.CurrentUserDefault())
+    product = CreatableSlugRelatedField(slug_field='name', queryset=Product.objects.all())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     purchased_stuff = PurchasedStuffSerializer(required=False, exclude_fields=['stuff', 'purchased'])
@@ -164,19 +172,10 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
         return request.user.id == obj.user.id
 
     def to_representation(self, instance):
-        quantity = instance.quantity
-        if quantity:
-            frac, whole = math.modf(instance.quantity)
-            quantity_fmt = frac + whole
-
-            if (quantity_fmt % 1 > 0):
-                quantity = quantity_fmt
-            else:
-                quantity = int(quantity_fmt)
-
-        data = super().to_representation(instance)
-        data['quantity'] = quantity
-        return data
+        ret = super().to_representation(instance)
+        ret['quantity'] = instance.quantity_format
+        ret['metric_display'] = instance.get_metric_display()
+        return ret
 
     def to_internal_value(self, data):
         self.purchased_stuff = data.pop('purchased_stuff', None)
@@ -254,6 +253,7 @@ class BasketSerializer(DynamicFieldsModelSerializer, ExcludeFieldsModelSerialize
     share = ShareSerializer(read_only=True, many=True,
                             fields=['uuid', 'status', 'is_admin', 'is_can_crud',
                                     'is_can_buy', 'to_user', 'url'])
+    order = OrderSerializer(read_only=True, many=False)
 
     first_name = serializers.CharField(read_only=True, source='user.first_name')
     subtotal_stuff = serializers.IntegerField(read_only=True)

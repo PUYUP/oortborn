@@ -60,7 +60,7 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ListSerializer):
     def to_representation(self, value):
-        if isinstance(value, QuerySet):
+        if isinstance(value, QuerySet) and value.exists():
             value = value.prefetch_related(Prefetch('topic'))
         return super().to_representation(value)
 

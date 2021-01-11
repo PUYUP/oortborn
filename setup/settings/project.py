@@ -11,6 +11,7 @@ PROJECT_URL = 'www.daftarbelanja.com'
 PAGINATION_PER_PAGE = 15
 LOGIN_WITH_JWT = True
 RECOVERY_PASSWORD_CHECK_ACCOUNT = True # If true in recovery password need make sure account exist
+BASE_SHIPPING_AMOUNT = 25000
 
 
 # REGISTRATION REQUIREMENTS
@@ -28,7 +29,7 @@ LOGIN_URL = '/person/login/'
 
 # Application definition
 PROJECT_APPS = [
-    'channels',
+    #'channels',
     'corsheaders',
     'rest_framework',
     'apps.person.apps.PersonConfig',

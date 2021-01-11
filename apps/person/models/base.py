@@ -18,5 +18,5 @@ class User(AbstractUser):
         return False
 
     @property
-    def is_operator(self):
+    def is_assistant(self):
         return False
