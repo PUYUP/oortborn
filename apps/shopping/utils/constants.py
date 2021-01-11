@@ -18,6 +18,9 @@ CUP = 'cup'
 CANS = 'cans'
 NOMINAL = 'nominal'
 JOINTLY = 'jointly'
+BOWL = 'bowl'
+PORTION = 'portion'
+PEOPLE = 'people'
 METRIC_CHOICES = (
     (NOMINAL, _("Nominal")),
     (KILOGRAM, _("Kilogram")),
@@ -36,6 +39,9 @@ METRIC_CHOICES = (
     (CANS, _("Kaleng")),
     (JOINTLY, _("Renteng")),
     (UNIT, _("Unit")),
+    (BOWL, _("Mangkok")),
+    (PORTION, _("Porsi")),
+    (PEOPLE, _("Orang")),
 )
 
 
