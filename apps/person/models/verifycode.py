@@ -121,7 +121,7 @@ class AbstractVerifyCode(models.Model):
     def clean(self, *args, **kwargs):
         if not self.pk and not self.user:
             # request object get from clean method
-            request = kwargs.get('request', {})
+            request = kwargs.pop('request', {})
 
             # username outside this model
             # some reason user need recovery password and don't have valid account email

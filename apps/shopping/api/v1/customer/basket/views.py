@@ -184,7 +184,8 @@ class BasketApiView(viewsets.ViewSet):
     def put(self, request, format=None):
         fields = []
         update_uuids = [item.get('uuid') for item in request.data]
-
+        source = next((x.get('source') for x in request.data), None)
+  
         # Collect fields affect for updated
         for item in request.data:
             fields.extend(list(item.keys()))
@@ -195,7 +196,7 @@ class BasketApiView(viewsets.ViewSet):
         else:
             used_fields = '__all__'
 
-        context = {'request': request}
+        context = {'request': request, 'source': source}
         serializer = BasketSerializer(queryset, data=request.data, context=context, many=True,
                                       fields=[*used_fields])
 
@@ -486,6 +487,7 @@ class StuffApiView(viewsets.ViewSet):
     def put(self, request, format=None):
         fields = []
         update_uuids = [item.get('uuid') for item in request.data]
+        source = next((x.get('source') for x in request.data), None)
 
         # Collect fields affect for updated
         for item in request.data:
@@ -497,7 +499,7 @@ class StuffApiView(viewsets.ViewSet):
         else:
             used_fields = '__all__'
  
-        context = {'request': request}
+        context = {'request': request, 'source': source}
         serializer = StuffSerializer(queryset, data=request.data, context=context, many=True,
                                      fields=used_fields)
 
@@ -682,6 +684,7 @@ class ShareApiView(viewsets.ViewSet):
     def put(self, request, format=None):
         fields = []
         update_uuids = [item.get('uuid') for item in request.data]
+        source = next((x.get('source') for x in request.data), None)
 
         # Collect fields affect for updated
         for item in request.data:
@@ -693,7 +696,7 @@ class ShareApiView(viewsets.ViewSet):
         else:
             used_fields = '__all__'
     
-        context = {'request': request}
+        context = {'request': request, 'source': source}
         serializer = ShareSerializer(queryset, data=request.data, context=context, many=True,
                                      fields=[*used_fields])
 

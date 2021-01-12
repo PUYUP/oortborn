@@ -9,9 +9,10 @@ from django.utils.translation import ugettext_lazy as _
 from ..utils.constants import METRIC_CHOICES, GENERAL_STATUS, WAITING
 from utils.validators import non_python_keyword, identifier_validator
 from utils.generals import quantity_format
+from utils.mixin.generals import ModelDiffMixin
 
 
-class AbstractBasket(models.Model):
+class AbstractBasket(ModelDiffMixin, models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
@@ -69,11 +70,12 @@ class AbstractBasket(models.Model):
             raise ValidationError(_("Tidak boleh menghapus {}".format(self.name)))
         
     def clean(self, *args, **kwargs):
-        if self.pk and self.is_ordered:
+        self.source = kwargs.pop('source', None)
+        if self.pk and self.is_ordered and self.source != 'sorting':
             raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak".format(self.name))})
 
-        self.request = kwargs.get('request', None)
-        if self.request:
+        self.request = kwargs.pop('request', None)
+        if self.request is not None:
             self.current_user = self.request.user
 
             if self.pk:
@@ -301,7 +303,8 @@ class AbstractStuff(models.Model):
             raise ValidationError(_("Menghapus item {} setelah belanja selesai tidak diperbolehkan".format(self.name)))
 
     def clean(self, *args, **kwargs):
-        if self.pk and self.basket.is_ordered:
+        self.source = kwargs.pop('source', None)
+        if self.pk and self.basket.is_ordered and self.source != 'sorting':
             raise ValidationError({'detail': _("Sudah dikirim ke Asisten Belanja tindakan ditolak".format(self.name))})
 
         self.request = kwargs.pop('request', None)
