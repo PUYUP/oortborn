@@ -38,6 +38,7 @@ class CleanValidateMixin(serializers.ModelSerializer):
             if isinstance(self.instance, QuerySet):
                 uuid = attrs.get('uuid')
                 instance = next((x for x in self.instance if x.uuid == uuid), None)
+                
                 if instance is not None:
                     for x in attr:
                         setattr(instance, x, attr.get(x))

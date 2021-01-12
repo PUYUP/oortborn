@@ -78,7 +78,10 @@ class WritetableFieldPutMethod(serializers.ModelSerializer):
 
             # Make field editable.
             for field_name in allowed:
-                self.fields[field_name].read_only = False
+                try:
+                    self.fields[field_name].read_only = False
+                except KeyError:
+                    pass
 
 
 class ListSerializerUpdateMappingField(serializers.ListSerializer):

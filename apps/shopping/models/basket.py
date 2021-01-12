@@ -84,9 +84,6 @@ class AbstractBasket(ModelDiffMixin, models.Model):
         return super().clean()
 
     def save(self, *args, **kwargs):
-        if self.user and not self.pk:
-            c = self.__class__.objects.filter(user_id=self.user.id).count()
-            self.sort = c + 1
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -328,10 +325,6 @@ class AbstractStuff(models.Model):
         if self.basket.is_complete:
             self.is_additional = True
 
-        if self.user and not self.pk:
-            c = self.__class__.objects.filter(user_id=self.user.id).count()
-            self.sort = c + 1
-
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -439,7 +432,7 @@ class AbstractShare(models.Model):
         Hanya creator Basket yg bisa merubah 
         Atau jika user dibagikan dengan status = 'waiting'
         """
-        if (self.share_obj and self.share_obj.status != 'waiting') and (self.user.uuid != self.current_user.uuid):
+        if (self.share_obj and self.share_obj.status != 'waiting' and self.source != 'sorting') and (self.user.uuid != self.current_user.uuid):
             raise ValidationError({'detail': _("Tidak bisa merubah")})
 
     def check_can_delete(self):
@@ -461,7 +454,9 @@ class AbstractShare(models.Model):
             raise ValidationError(_("Anda memiliki item di {}. Tidak bisa dihapus. Hapus terlebih dahulu item Anda untuk menghapus daftar ini.".format(self.basket.name)))
 
     def clean(self, *args, **kwargs):
+        self.source = kwargs.pop('source', None)
         self.request = kwargs.pop('request', None)
+
         if self.request is not None:
             self.current_user = self.request.user
             self.share = self.basket.share.filter(to_user_id=self.current_user.id)
