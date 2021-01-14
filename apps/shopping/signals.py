@@ -131,3 +131,25 @@ def order_line_save_handler(sender, instance, created, **kwargs):
         stuff = instance.stuff
         stuff.quantity = instance.quantity
         stuff.save()
+
+
+@transaction.atomic
+def assign_save_handler(sender, instance, created, **kwargs):
+    # setup purchased ke pemilik basket
+    defaults = {
+        'is_ongoing': instance.is_ongoing,
+        'is_complete': instance.is_complete,
+    }
+
+    _purchased, _created = Purchased.objects \
+        .update_or_create(basket=instance.basket, user=instance.basket.user,
+                          defaults=defaults)
+
+    # update order equal as assign status
+    instance.order.is_ongoing = instance.is_ongoing
+    instance.order.is_complete = instance.is_complete
+    instance.order.save()
+
+    # update basket status
+    instance.order.basket.is_complete = instance.is_complete
+    instance.order.basket.save()

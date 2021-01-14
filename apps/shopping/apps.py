@@ -15,7 +15,8 @@ class ShoppingConfig(AppConfig):
             purchased_stuff_delete_handler,
             order_save_handler,
             order_delete_handler,
-            order_line_save_handler
+            order_line_save_handler,
+            assign_save_handler
         )
 
         Purchased = get_model('shopping', 'Purchased')
@@ -23,6 +24,7 @@ class ShoppingConfig(AppConfig):
         Share = get_model('shopping', 'Share')
         Order = get_model('shopping', 'Order')
         OrderLine = get_model('shopping', 'OrderLine')
+        Assign = get_model('shopping', 'Assign')
 
         post_save.connect(purchased_save_handler, sender=Purchased,
                           dispatch_uid='purchased_save_signal')
@@ -32,6 +34,8 @@ class ShoppingConfig(AppConfig):
                           dispatch_uid='order_save_signal')
         post_save.connect(order_line_save_handler, sender=OrderLine,
                           dispatch_uid='order_line_save_signal')
+        post_save.connect(assign_save_handler, sender=Assign,
+                          dispatch_uid='assign_save_signal')
 
         post_delete.connect(share_delete_handler, sender=Share,
                             dispatch_uid='share_delete_signal')

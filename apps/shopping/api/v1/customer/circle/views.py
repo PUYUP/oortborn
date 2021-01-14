@@ -1,15 +1,17 @@
 from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import viewsets, status as response_status
-from rest_framework.exceptions import NotAcceptable, NotFound
+from rest_framework.exceptions import NotAcceptable
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
 from utils.generals import get_model
 from utils.pagination import build_result_pagination
+from utils.mixin.viewsets import ViewSetDestroyObjMixin, ViewSetGetObjMixin
+
 from ....permissions import IsObjectOwnerOrReject
 from .serializers import CircleSerializer
 
@@ -19,7 +21,7 @@ Circle = get_model('shopping', 'Circle')
 _PAGINATOR = LimitOffsetPagination()
 
 
-class CircleApiView(viewsets.ViewSet):
+class CircleApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated, IsObjectOwnerOrReject,)
 
@@ -27,21 +29,6 @@ class CircleApiView(viewsets.ViewSet):
         query = Circle.objects \
             .prefetch_related('user') \
             .select_related('user')
-
-        return query
-
-    def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
-
-        try:
-            if is_update:
-                query = query.select_for_update().get(uuid=uuid)
-            else:
-                query = query.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise NotAcceptable(detail=str(e))
 
         return query
 
@@ -89,13 +76,3 @@ class CircleApiView(viewsets.ViewSet):
                 raise NotAcceptable(detail=str(e))
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
-
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-        
-        self.check_object_permissions(request, queryset)
-
-        queryset.delete()
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)

@@ -14,6 +14,7 @@ from rest_framework.pagination import LimitOffsetPagination
 
 from utils.generals import get_model
 from utils.pagination import build_result_pagination
+from utils.mixin.viewsets import ViewSetDestroyObjMixin, ViewSetGetObjMixin
 from .serializers import PurchasedSerializer, PurchasedStuffSerializer, PurchasedStuffAttachmentSerializer
 
 Purchased = get_model('shopping', 'Purchased')
@@ -24,7 +25,7 @@ PurchasedStuffAttachment = get_model('shopping', 'PurchasedStuffAttachment')
 _PAGINATOR = LimitOffsetPagination()
 
 
-class PurchasedApiView(viewsets.ViewSet):
+class PurchasedApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -32,21 +33,6 @@ class PurchasedApiView(viewsets.ViewSet):
         query = Purchased.objects \
             .prefetch_related('user', 'basket') \
             .select_related('user', 'basket')
-
-        return query
-
-    def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
-
-        try:
-            if is_update:
-                query = query.select_for_update().get(uuid=uuid)
-            else:
-                query = query.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise NotAcceptable(detail=str(e))
 
         return query
 
@@ -111,20 +97,8 @@ class PurchasedApiView(viewsets.ViewSet):
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
 
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-        
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
 
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)
-
-
-class PurchasedStuffApiView(viewsets.ViewSet):
+class PurchasedStuffApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -132,21 +106,6 @@ class PurchasedStuffApiView(viewsets.ViewSet):
         query = PurchasedStuff.objects \
             .prefetch_related('stuff', 'purchased', 'basket', 'user') \
             .select_related('stuff', 'purchased', 'basket', 'user')
-
-        return query
-
-    def get_object(self, uuid=None, is_update=False):
-        query = self.queryset()
-
-        try:
-            if is_update:
-                query = query.select_for_update().get(uuid=uuid)
-            else:
-                query = query.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise NotAcceptable(detail=str(e))
 
         return query
 
@@ -184,18 +143,6 @@ class PurchasedStuffApiView(viewsets.ViewSet):
                 raise NotAcceptable(detail=str(e))
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
-
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-        
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
-
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)
 
     # List attachment
     @transaction.atomic

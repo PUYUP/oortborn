@@ -53,7 +53,8 @@ class OrderLineSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicF
         return ret
 
 
-class OrderSerializer(CleanValidateMixin, serializers.ModelSerializer):
+class OrderSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
+                      ExcludeFieldsModelSerializer, serializers.ModelSerializer):
     customer = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
                                             default=serializers.CurrentUserDefault())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())

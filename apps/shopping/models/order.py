@@ -27,6 +27,9 @@ class AbstractOrder(models.Model):
     status = models.CharField(choices=GENERAL_STATUS, default=WAITING, max_length=15, db_index=True,
                               validators=[identifier_validator, non_python_keyword])
 
+    is_ongoing = models.BooleanField(default=False, db_index=True)
+    is_complete = models.BooleanField(default=False, db_index=True)
+
     class Meta:
         abstract = True
         app_label = 'shopping'
@@ -117,6 +120,9 @@ class AbstractOrderLine(models.Model):
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     
+    is_found = models.BooleanField(default=None, null=True, db_index=True)
+    is_private = models.BooleanField(default=False, null=True, db_index=True)
+
     class Meta:
         abstract = True
         app_label = 'shopping'

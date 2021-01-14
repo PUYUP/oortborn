@@ -1,17 +1,18 @@
-from math import trunc
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import viewsets, status as response_status
-from rest_framework.exceptions import NotAcceptable, NotFound, ValidationError as ValidationErrorResponse
+from rest_framework.exceptions import NotAcceptable, ValidationError as ValidationErrorResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
 from utils.generals import get_model
 from utils.pagination import build_result_pagination
+from utils.mixin.viewsets import ViewSetDestroyObjMixin, ViewSetGetObjMixin
+from apps.shopping.utils.constants import ACCEPT, DONE, WAITING
 from .serializers import OrderSerializer, OrderLineSerializer, OrderScheduleSerializer
 
 Order = get_model('shopping', 'Order')
@@ -22,7 +23,7 @@ OrderLine = get_model('shopping', 'OrderLine')
 _PAGINATOR = LimitOffsetPagination()
 
 
-class OrderApiView(viewsets.ViewSet):
+class OrderApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -37,25 +38,16 @@ class OrderApiView(viewsets.ViewSet):
 
         return query
 
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
-
-        return queryset
-
     def list(self, request, format=None):
         context = {'request': request}
         status = request.query_params.get('status', None)
         queryset = self.queryset()
+
+        summary = queryset.aggregate(
+            count_waiting=Count('id', filter=Q(status=WAITING)),
+            count_accept=Count('id', filter=Q(status=ACCEPT)),
+            count_done=Count('id', filter=Q(status=DONE))
+        )
 
         if status is not None:
             queryset = queryset.filter(status=status)
@@ -63,6 +55,7 @@ class OrderApiView(viewsets.ViewSet):
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = OrderSerializer(queryset_paginator, many=True, context=context)
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
+        pagination_result['summary'] = summary
         return Response(pagination_result, status=response_status.HTTP_200_OK)
 
     def retrieve(self, request, uuid=None, format=None):
@@ -83,20 +76,8 @@ class OrderApiView(viewsets.ViewSet):
             return Response(serializer.data, status=response_status.HTTP_201_CREATED)
         return Response(serializer.errors, status=response_status.HTTP_403_FORBIDDEN)
 
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
 
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
-
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)
-
-
-class OrderLineApiView(viewsets.ViewSet):
+class OrderLineApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     """
     Param GET:
     
@@ -121,21 +102,6 @@ class OrderLineApiView(viewsets.ViewSet):
             .filter(customer_id=self.request.user.id)
 
         return query
-
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
-
-        return queryset
 
     def list(self, request, format=None):
         context = {'request': request}
@@ -181,7 +147,7 @@ class OrderLineApiView(viewsets.ViewSet):
         return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
 
 
-class OrderScheduleApiView(viewsets.ViewSet):
+class OrderScheduleApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     """
     Param:
 
@@ -199,21 +165,6 @@ class OrderScheduleApiView(viewsets.ViewSet):
             .filter(order__customer_id=self.request.user.id)
 
         return query
-
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
-
-        return queryset
 
     def list(self, request, format=None):
         return Response(status=response_status.HTTP_200_OK)

@@ -1,3 +1,4 @@
+from utils.mixin.viewsets import ViewSetDestroyObjMixin, ViewSetGetObjMixin
 from dateutil import parser
 
 from django.db import transaction
@@ -43,7 +44,7 @@ _PAGINATOR = LimitOffsetPagination()
 START BASKET
 """
 
-class BasketApiView(viewsets.ViewSet):
+class BasketApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -61,14 +62,14 @@ class BasketApiView(viewsets.ViewSet):
             .prefetch_related('user', 'completed_by', 'order') \
             .select_related('user', 'completed_by', 'order') \
             .annotate(
-                subtotal_stuff=Count('stuff', distinct=True),
-                subtotal_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
-                subtotal_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
-                subtotal_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
-                subtotal_share=Count('share', distinct=True),
-                subtotal_attachment=Count('basket_attachment', distinct=True),
-                subtotal_stuff_looked=F('subtotal_stuff') - F('subtotal_stuff_purchased'),
-                subtotal_amount=Coalesce(Subquery(basket_obj.values('total_amount')[:1]), Value(0)),
+                count_stuff=Count('stuff', distinct=True),
+                count_stuff_purchased=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__isnull=False)),
+                count_stuff_found=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=True)),
+                count_stuff_notfound=Count('stuff', distinct=True, filter=Q(stuff__purchased_stuff__is_found=False)),
+                count_share=Count('share', distinct=True),
+                count_attachment=Count('basket_attachment', distinct=True),
+                count_stuff_looked=F('count_stuff') - F('count_stuff_purchased'),
+                count_amount=Coalesce(Subquery(basket_obj.values('total_amount')[:1]), Value(0)),
                 
                 is_share_with_you=Exists(share_obj),
                 is_share_uuid=Subquery(share_obj.values('uuid')[:1]),
@@ -102,21 +103,6 @@ class BasketApiView(viewsets.ViewSet):
 
         return queryset
 
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
-
-        return queryset
-
     def list(self, request, format=None):
         q_ordered, q_keyword = Q(), Q()
         q_complete = Q(is_complete=False)
@@ -138,7 +124,7 @@ class BasketApiView(viewsets.ViewSet):
         queryset = queryset.filter(q_ordered, q_complete, q_keyword)
 
         # Calculate total ampunt
-        summary = queryset.aggregate(total_amount=Sum('subtotal_amount'))
+        summary = queryset.aggregate(total_amount=Sum('count_amount'))
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = BasketSerializer(queryset_paginator, many=True, context=context,
@@ -208,18 +194,6 @@ class BasketApiView(viewsets.ViewSet):
 
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
-
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
-
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)
 
     # Reuse Basket
     @method_decorator(never_cache)
@@ -361,7 +335,7 @@ class BasketApiView(viewsets.ViewSet):
 START STUFF
 """
 
-class StuffApiView(viewsets.ViewSet):
+class StuffApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -377,21 +351,6 @@ class StuffApiView(viewsets.ViewSet):
                 | Q(basket__share__to_user_id=self.request.user.id)
             ).distinct()
         
-        return queryset
-
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
-
         return queryset
 
     def list(self, request, format=None):
@@ -512,18 +471,6 @@ class StuffApiView(viewsets.ViewSet):
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
 
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
-
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)
-
     # List attachment
     @method_decorator(never_cache)
     @transaction.atomic
@@ -601,7 +548,7 @@ class StuffApiView(viewsets.ViewSet):
 START SHARE WITH
 """
 
-class ShareApiView(viewsets.ViewSet):
+class ShareApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (IsAuthenticated,)
 
@@ -611,21 +558,6 @@ class ShareApiView(viewsets.ViewSet):
             .select_related('to_user', 'basket', 'user') \
             .filter(Q(user__uuid=self.request.user.uuid)
                     | Q(to_user_id=self.request.user.id))
-
-        return queryset
-
-    def get_object(self, uuid=None, is_update=False):
-        queryset = self.queryset()
-
-        try:
-            if is_update:
-                queryset = queryset.select_for_update().get(uuid=uuid)
-            else:
-                queryset = queryset.get(uuid=uuid)
-        except ObjectDoesNotExist:
-            raise NotFound()
-        except ValidationError as e:
-            raise ValidationErrorResponse(detail=str(e))
 
         return queryset
 
@@ -708,15 +640,3 @@ class ShareApiView(viewsets.ViewSet):
 
             return Response(serializer.data, status=response_status.HTTP_200_OK)
         return Response(serializer.errors, status=response_status.HTTP_406_NOT_ACCEPTABLE)
-
-    @transaction.atomic
-    def destroy(self, request, uuid=None, format=None):
-        queryset = self.get_object(uuid=uuid)
-        
-        try:
-            queryset.delete(request=request)
-        except ValidationError as e:
-            raise NotAcceptable(detail=' '.join(e))
-
-        return Response({'detail': _("Delete success!")},
-                        status=response_status.HTTP_200_OK)

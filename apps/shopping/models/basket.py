@@ -49,6 +49,12 @@ class AbstractBasket(ModelDiffMixin, models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def is_order_ongoing(self):
+        if hasattr(self, 'order'):
+            return self.order.is_ongoing
+        return False
+
     def check_can_update(self):
         """ 
         Hanya creator boleh mengedit 

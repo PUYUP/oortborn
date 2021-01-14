@@ -4,6 +4,7 @@ import math
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db.models import fields
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import slugify
@@ -251,24 +252,25 @@ class BasketSerializer(DynamicFieldsModelSerializer, ExcludeFieldsModelSerialize
     purchased = PurchasedSerializer(read_only=True, many=True)
     stuff = StuffSerializer(many=True, write_only=True, required=False, exclude_fields=['basket'])
     share = ShareSerializer(read_only=True, many=True,
-                            fields=['uuid', 'status', 'is_admin', 'is_can_crud',
-                                    'is_can_buy', 'to_user', 'url'])
-    order = OrderSerializer(read_only=True, many=False)
+                            exclude_fields=['basket', 'circle', 'msisdn', 'username',
+                                            'sort', 'user', 'create_at', 'update_at', 'id'])
+    order = OrderSerializer(read_only=True, many=False, fields=['uuid', 'order_schedule'])
 
     first_name = serializers.CharField(read_only=True, source='user.first_name')
-    subtotal_stuff = serializers.IntegerField(read_only=True)
-    subtotal_stuff_purchased = serializers.IntegerField(read_only=True)
-    subtotal_stuff_found = serializers.IntegerField(read_only=True)
-    subtotal_stuff_notfound = serializers.IntegerField(read_only=True)
-    subtotal_stuff_looked = serializers.IntegerField(read_only=True)
-    subtotal_amount = serializers.IntegerField(read_only=True)
-    subtotal_share = serializers.IntegerField(read_only=True)
-    subtotal_attachment = serializers.IntegerField(read_only=True)
+    count_stuff = serializers.IntegerField(read_only=True)
+    count_stuff_purchased = serializers.IntegerField(read_only=True)
+    count_stuff_found = serializers.IntegerField(read_only=True)
+    count_stuff_notfound = serializers.IntegerField(read_only=True)
+    count_stuff_looked = serializers.IntegerField(read_only=True)
+    count_amount = serializers.IntegerField(read_only=True)
+    count_share = serializers.IntegerField(read_only=True)
+    count_attachment = serializers.IntegerField(read_only=True)
     
     is_creator = serializers.SerializerMethodField(read_only=True)
     is_share_with_you = serializers.BooleanField(read_only=True)
     is_share_uuid = serializers.UUIDField(read_only=True)
     is_share_sort = serializers.IntegerField(read_only=True)
+    is_order_ongoing = serializers.BooleanField(read_only=True)
     """
     is_share_status = serializers.CharField(read_only=True)
     is_share_admin = serializers.BooleanField(read_only=True)
