@@ -122,6 +122,7 @@ def order_save_handler(sender, instance, created, **kwargs):
 def order_delete_handler(sender, instance, using, **kwargs):
     basket = instance.basket
     basket.is_ordered = False
+    basket.is_purchased = False
     basket.save()
 
 

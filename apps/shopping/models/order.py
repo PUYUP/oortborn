@@ -73,6 +73,9 @@ class AbstractOrder(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        if self.is_ongoing or hasattr(self, 'assign') and self.assign:
+            raise ValidationError(_("Belanja tidak bisa dibatalkan"))
+        
         super().delete()
 
 
