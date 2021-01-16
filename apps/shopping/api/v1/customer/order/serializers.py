@@ -58,7 +58,7 @@ class OrderSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     customer = serializers.SlugRelatedField(slug_field='uuid', queryset=get_user_model().objects.all(),
                                             default=serializers.CurrentUserDefault())
     basket = serializers.SlugRelatedField(slug_field='uuid', queryset=Basket.objects.all())
-    basket_name = serializers.StringRelatedField(many=False, source='basket.name')
+    basket_name = serializers.StringRelatedField(many=False, source='basket.name', read_only=True)
     order_schedule = OrderScheduleSerializer(many=False, required=True)
     assign = AssignSerializer(many=False, read_only=True)
     total_order_line = serializers.IntegerField(read_only=True)

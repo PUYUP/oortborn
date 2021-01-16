@@ -212,6 +212,7 @@ class AssignInline(admin.StackedInline):
 class OrderExtend(admin.ModelAdmin):
     model = Product
     inlines = [AssignInline,]
+    readonly_fields = ['customer',]
 
 
 admin.site.register(Category)

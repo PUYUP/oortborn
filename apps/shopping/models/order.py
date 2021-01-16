@@ -19,7 +19,7 @@ class AbstractOrder(models.Model):
     update_at = models.DateTimeField(auto_now=True)
 
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                                 related_name='order')
+                                 related_name='order', editable=False)
     basket = models.OneToOneField('shopping.Basket', on_delete=models.CASCADE,
                                   related_name='order')
 
@@ -70,6 +70,8 @@ class AbstractOrder(models.Model):
             number = '{}{}'.format(rand, int(timestamp))
             self.number = number
 
+        # customer always creator of basket
+        self.customer = self.basket.user
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

@@ -1,6 +1,6 @@
 import itertools
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
 from django.http import request
 from django.utils.encoding import smart_str
@@ -118,6 +118,9 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
         try:
             instance, _created = model.objects \
                 .get_or_create(**{self.slug_field: data}, defaults={'user': request.user})
+            return instance
+        except MultipleObjectsReturned:
+            instance = model.objects.filter(**{self.slug_field: data}).first()
             return instance
         except ObjectDoesNotExist:
             self.fail('does_not_exist', slug_name=self.slug_field, value=smart_str(data))
