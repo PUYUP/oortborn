@@ -21,6 +21,10 @@ JOINTLY = 'jointly'
 BOWL = 'bowl'
 PORTION = 'portion'
 PEOPLE = 'people'
+DAY = 'day'
+WEEK = 'week'
+MONTH = 'month'
+YEAR = 'year'
 METRIC_CHOICES = (
     (NOMINAL, _("Nominal")),
     (KILOGRAM, _("Kilogram")),
@@ -42,6 +46,10 @@ METRIC_CHOICES = (
     (BOWL, _("Mangkok")),
     (PORTION, _("Porsi")),
     (PEOPLE, _("Orang")),
+    (DAY, _("Hari")),
+    (WEEK, _("Minggu")),
+    (MONTH, _("Bulan")),
+    (YEAR, _("Tahun")),
 )
 
 
