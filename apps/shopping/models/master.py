@@ -58,10 +58,10 @@ class AbstractProduct(models.Model):
     category = models.ForeignKey('shopping.Category', on_delete=models.SET_NULL,
                                  related_name='product', null=True, blank=True)
 
-    name = models.CharField(max_length=255, unique=True, db_index=True)
+    name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     is_enabled = models.BooleanField(default=True)
-    is_catalog = models.BooleanField(default=False)
+    is_catalog = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         abstract = True
