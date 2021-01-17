@@ -183,11 +183,11 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
         if self.purchased_stuff is not None:
             is_found = self.purchased_stuff.get('is_found', False)
             if is_found:
-                amount = self.purchased_stuff.get('amount', 0)
+                price = self.purchased_stuff.get('price', 0)
                 quantity = self.purchased_stuff.get('quantity', 0)
 
-                if amount <= 0:
-                    raise ValidationError({'amount': _("Harga tidak boleh kurang dari nol")})
+                if price <= 0:
+                    raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
 
                 if quantity <= 0:
                     raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})

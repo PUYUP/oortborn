@@ -209,16 +209,23 @@ class AbstractPurchasedStuff(models.Model):
             # Jika belum purchased masih boleh nol
             # jika sudah purchased tidak boleh nol atau kurang
             if self.request and self.pk:
-                if self.amount <= 0:
-                    raise ValidationError({'amount': _("Total harga tidak boleh kurang dari nol")})
+                if self.price <= 0:
+                    raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
 
         return super().clean()
 
     def save(self, *args, **kwargs):
+        """
         if self.metric != NOMINAL and self.amount > 0 and self.quantity > 0:
             self.price = self.amount / self.quantity
         else:
             self.price = self.amount
+        """
+
+        if self.metric != NOMINAL and self.price > 0 and self.quantity > 0:
+            self.amount = self.price * self.quantity
+        else:
+            self.amount = self.price
         
         # Set price and amount to 0 if not found
         if not self.is_found:
