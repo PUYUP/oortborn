@@ -7,7 +7,7 @@ from .circle.views import CircleApiView
 from .order.views import OrderApiView, OrderLineApiView, OrderScheduleApiView
 
 # Create a router and register our viewsets with it.
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=True)
 router.register('baskets', BasketApiView, basename='basket')
 router.register('stuffs', StuffApiView, basename='stuff')
 router.register('purchaseds', PurchasedApiView, basename='purchased')

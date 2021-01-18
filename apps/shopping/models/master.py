@@ -1,4 +1,5 @@
 import uuid
+import os
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -107,7 +108,7 @@ class AbstractProductRate(models.Model):
     purchased_stuff = models.ForeignKey('shopping.PurchasedStuff', on_delete=models.SET_NULL,
                                         related_name='product_rate', null=True, blank=True)
 
-    name = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     quantity = models.DecimalField(max_digits=15, decimal_places=5, null=True, blank=True)
     metric = models.CharField(max_length=15, choices=METRIC_CHOICES, default=None,
                               null=True, blank=True, validators=[identifier_validator, non_python_keyword])
@@ -139,9 +140,14 @@ class AbstractProductRate(models.Model):
         if self.request:
             self.quantity = self.request.data.get('quantity', 0)
 
-        if self.quantity <= 0:
+        if self.quantity is not None and self.quantity <= 0:
             raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
         return super().clean()
+
+    def save(self, *args, **kwargs):
+        if not self.name and self.product:
+            self.name = self.product.name
+        return super().save(*args, **kwargs)
 
 
 class AbstractProductAttachment(models.Model):
@@ -152,13 +158,13 @@ class AbstractProductAttachment(models.Model):
     product = models.ForeignKey('shopping.Product', on_delete=models.CASCADE,
                                 related_name='product_attachment', db_index=True)
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to='files/product-attachment/', max_length=500,
                             null=True, blank=True)
     image = models.FileField(upload_to='images/product-attachment/', max_length=500,
                              null=True, blank=True)
-    mime = models.CharField(max_length=225)
+    mime = models.CharField(max_length=225, editable=False)
     sort = models.IntegerField(default=1)
 
     class Meta:
@@ -170,3 +176,19 @@ class AbstractProductAttachment(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        ext = None
+        name = None
+    
+        if self.file:
+            name, ext = os.path.splitext(self.file.name)
+
+        if self.image:
+            name, ext = os.path.splitext(self.image.name)
+        
+        self.mime = ext
+        
+        if not self.name:
+            self.name = name
+        return super().save(*args, **kwargs)

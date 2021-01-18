@@ -3,7 +3,7 @@ from dateutil import parser
 
 from django.db.models.functions import Round
 from django.db import transaction
-from django.db.models import Count, Max, Min, Avg, Q
+from django.db.models import Count, Max, Min, Avg, F, Q, OuterRef, Subquery, Case, When, CharField
 from django.utils import timezone
 from rest_framework import viewsets, status as response_status
 from rest_framework.exceptions import NotAcceptable
@@ -17,6 +17,7 @@ from .serializers import ProductSerializer, ProductRateSerializer
 
 Product = get_model('shopping', 'Product')
 ProductRate = get_model('shopping', 'ProductRate')
+ProductAttachment = get_model('shopping', 'ProductAttachment')
 
 # Define to avoid used ...().paginate__
 _PAGINATOR = LimitOffsetPagination()
@@ -27,11 +28,24 @@ class ProductApiView(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def queryset(self):
+        attachment = ProductAttachment.objects.filter(product_id=OuterRef('id'))
+
         query = Product.objects \
             .prefetch_related('brand', 'user') \
             .select_related('brand', 'user') \
             .values('name') \
-            .annotate(product_count=Count('name')) \
+            .annotate(
+                product_count=Count('name'),
+                image=Subquery(attachment.values('image')[:1]),
+                lowest_price=Min('product_rate__price'),
+                highest_price=Max('product_rate__price'),
+                average_price=Round(Avg('product_rate__price')),
+                metric=Case(
+                    When(product_rate__isnull=False, then=F('product_rate__metric')),
+                    default=None,
+                    output_field=CharField()
+                )
+            ) \
             .order_by('name') \
             .distinct()
         
@@ -40,11 +54,15 @@ class ProductApiView(viewsets.ViewSet):
     def list(self, request, format=None):
         context = {'request': request}
         queryset = self.queryset()
-
         keyword = request.query_params.get('keyword')
+        mode = request.query_params.get('mode')
+
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
         
+        if mode == 'catalog':
+            queryset = queryset.filter(is_catalog=True)
+
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = ProductSerializer(queryset_paginator, many=True, context=context)
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)

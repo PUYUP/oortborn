@@ -9,7 +9,7 @@ from .user.views import TokenObtainPairViewExtend, UserApiView
 from .verifycode.views import VerifyCodeApiView
 
 # Create a router and register our viewsets with it.
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=True)
 router.register('users', UserApiView, basename='user')
 router.register('verifycodes', VerifyCodeApiView, basename='verifycode')
 

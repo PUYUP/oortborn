@@ -1,3 +1,4 @@
+from operator import itemgetter
 from django.utils.translation import ugettext_lazy as _
 
 # Metrics
@@ -25,7 +26,7 @@ DAY = 'day'
 WEEK = 'week'
 MONTH = 'month'
 YEAR = 'year'
-METRIC_CHOICES = (
+_METRIC_CHOICES = (
     (NOMINAL, _("Nominal")),
     (KILOGRAM, _("Kilogram")),
     (HECTOGRAM, _("Ons")),
@@ -35,7 +36,7 @@ METRIC_CHOICES = (
     (PACK, _("Bungkus")),
     (POUCH, _("Kantung")),
     (BOTTLE, _("Botol")),
-    (CUP, _("Cup")),
+    (CUP, _("Cup/Gelas")),
     (PIECE, _("Buah")),
     (BUNCH, _("Ikat")),
     (SACK, _("Karung")),
@@ -51,6 +52,8 @@ METRIC_CHOICES = (
     (MONTH, _("Bulan")),
     (YEAR, _("Tahun")),
 )
+
+METRIC_CHOICES = sorted(_METRIC_CHOICES, key=itemgetter(1))
 
 
 WAITING, ACCEPT, REJECT, DONE = 'waiting', 'accept', 'reject', 'done'

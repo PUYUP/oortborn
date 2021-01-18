@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from .product.views import ProductApiView, ProductRateApiView
 
 # Create a router and register our viewsets with it.
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=True)
 router.register('products', ProductApiView, basename='product')
 router.register('product-rates', ProductRateApiView, basename='product_rate')
 

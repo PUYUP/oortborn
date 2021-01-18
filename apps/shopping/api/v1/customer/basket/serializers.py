@@ -72,11 +72,11 @@ def handle_upload_stuff_attachment(instance, file):
 
 
 class ShareListSerializer(ListSerializerUpdateMappingField, serializers.ListSerializer):
-    def to_representation(self, data):
-        if isinstance(data, QuerySet) and data.exists():
-            data = data.prefetch_related('user', 'to_user', 'basket') \
+    def to_representation(self, instance):
+        if isinstance(instance, QuerySet) and instance.exists():
+            instance = instance.prefetch_related('user', 'to_user', 'basket') \
                 .select_related('user', 'to_user', 'basket')
-        return super().to_representation(data)
+        return super().to_representation(instance)
 
 
 class ShareSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicFieldsModelSerializer,
