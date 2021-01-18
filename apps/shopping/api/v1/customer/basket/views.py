@@ -110,7 +110,7 @@ class BasketApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet
         context = {'request': request}
         state = request.query_params.getlist('state')
         keyword = request.query_params.get('keyword')
-        queryset = self.queryset().order_by('sorted')
+        queryset = self.queryset().order_by('sorted', '-create_at')
 
         if 'ordered' in state:
             q_ordered = Q(is_ordered=True)
