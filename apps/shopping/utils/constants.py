@@ -26,6 +26,7 @@ DAY = 'day'
 WEEK = 'week'
 MONTH = 'month'
 YEAR = 'year'
+SHEET = 'sheet'
 _METRIC_CHOICES = (
     (NOMINAL, _("Nominal")),
     (KILOGRAM, _("Kilogram")),
@@ -51,6 +52,7 @@ _METRIC_CHOICES = (
     (WEEK, _("Minggu")),
     (MONTH, _("Bulan")),
     (YEAR, _("Tahun")),
+    (SHEET, _("Lembar")),
 )
 
 METRIC_CHOICES = sorted(_METRIC_CHOICES, key=itemgetter(1))
