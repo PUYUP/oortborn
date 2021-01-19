@@ -31,20 +31,14 @@ class ProductApiView(viewsets.ViewSet):
         attachment = ProductAttachment.objects.filter(product_id=OuterRef('id'))
 
         query = Product.objects \
-            .prefetch_related('brand', 'user') \
+            .prefetch_related('brand', 'user', 'product_metric') \
             .select_related('brand', 'user') \
-            .values('name') \
             .annotate(
                 product_count=Count('name'),
                 image=Subquery(attachment.values('image')[:1]),
                 lowest_price=Min('product_rate__price'),
                 highest_price=Max('product_rate__price'),
-                average_price=Round(Avg('product_rate__price')),
-                metric=Case(
-                    When(product_rate__isnull=False, then=F('product_rate__metric')),
-                    default=None,
-                    output_field=CharField()
-                )
+                average_price=Round(Avg('product_rate__price'))
             ) \
             .order_by('name') \
             .distinct()
@@ -61,7 +55,7 @@ class ProductApiView(viewsets.ViewSet):
             queryset = queryset.filter(name__icontains=keyword)
         
         if mode == 'catalog':
-            queryset = queryset.filter(is_catalog=True)
+            queryset = queryset.filter(is_catalog=True, product_metric__isnull=False)
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = ProductSerializer(queryset_paginator, many=True, context=context)

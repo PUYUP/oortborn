@@ -7,6 +7,19 @@ from apps.shopping.utils.constants import METRIC_CHOICES
 
 Product = get_model('shopping', 'Product')
 ProductRate = get_model('shopping', 'ProductRate')
+ProductMetric = get_model('shopping', 'ProductMetric')
+
+
+class ProductMetricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductMetric
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        metric_choice = dict(METRIC_CHOICES)
+        ret['metric_display'] = metric_choice.get(instance.metric)
+        return ret
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -15,7 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
     lowest_price = serializers.IntegerField(read_only=True)
     highest_price = serializers.IntegerField(read_only=True)
     average_price = serializers.IntegerField(read_only=True)
-    metric = serializers.CharField(read_only=True)
+    product_metric = ProductMetricSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -24,15 +37,10 @@ class ProductSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         request = self.context.get('request')
         ret = super().to_representation(instance)
-        image = instance.get('image', None)
-        metric = instance.get('metric', None)
+        image = getattr(instance, 'image', None)
 
         if image:
             ret['image'] = request.build_absolute_uri(settings.MEDIA_URL + image)
-        
-        if metric:
-            metric_choice = dict(METRIC_CHOICES)
-            ret['metric_display'] = metric_choice.get(metric)
         return ret
 
     @transaction.atomic
