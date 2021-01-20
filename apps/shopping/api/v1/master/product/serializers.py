@@ -3,6 +3,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from utils.generals import get_model
+from utils.mixin.api import DynamicFieldsModelSerializer
 from apps.shopping.utils.constants import METRIC_CHOICES
 
 Product = get_model('shopping', 'Product')
@@ -22,7 +23,7 @@ class ProductMetricSerializer(serializers.ModelSerializer):
         return ret
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
     uuid = serializers.UUIDField(read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     lowest_price = serializers.IntegerField(read_only=True)

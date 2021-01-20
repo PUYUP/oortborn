@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
-from ..utils.constants import WAITING, GENERAL_STATUS, METRIC_CHOICES
+from ..utils.constants import NOMINAL, WAITING, GENERAL_STATUS, METRIC_CHOICES
 from utils.generals import quantity_format, random_string
 from utils.validators import non_python_keyword, identifier_validator
 
@@ -122,6 +122,8 @@ class AbstractOrderLine(models.Model):
     quantity = models.DecimalField(max_digits=15, decimal_places=5)
     metric = models.CharField(max_length=15, choices=METRIC_CHOICES,
                               validators=[identifier_validator, non_python_keyword])
+    price = models.BigIntegerField(default=0)
+    amount = models.BigIntegerField(default=0)
     note = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     
@@ -146,6 +148,19 @@ class AbstractOrderLine(models.Model):
 
     def clean(self, *args, **kwargs):
         return super().clean()
+
+    def save(self, *args, **kwargs):
+        if self.metric != NOMINAL and self.price > 0 and self.quantity > 0:
+            self.amount = self.price * self.quantity
+        else:
+            self.amount = self.price
+        
+        # Set price and amount to 0 if not found
+        if not self.is_found:
+            self.price = 0
+            self.amount = 0
+
+        super().save(*args, **kwargs)
 
 
 class AbstractOrderDelivery(models.Model):

@@ -31,8 +31,8 @@ class ProductApiView(viewsets.ViewSet):
         attachment = ProductAttachment.objects.filter(product_id=OuterRef('id'))
 
         query = Product.objects \
-            .prefetch_related('brand', 'user', 'product_metric') \
-            .select_related('brand', 'user') \
+            .prefetch_related('brand', 'user', 'category', 'product_metric') \
+            .select_related('brand', 'user', 'category') \
             .annotate(
                 product_count=Count('name'),
                 image=Subquery(attachment.values('image')[:1]),
@@ -58,7 +58,9 @@ class ProductApiView(viewsets.ViewSet):
             queryset = queryset.filter(is_catalog=True, product_metric__isnull=False)
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
-        serializer = ProductSerializer(queryset_paginator, many=True, context=context)
+        serializer = ProductSerializer(queryset_paginator, many=True, context=context,
+                                       fields=['uuid', 'lowest_price', 'highest_price',
+                                               'average_price', 'product_metric', 'name', 'image'])
         pagination_result = build_result_pagination(self, _PAGINATOR, serializer)
         return Response(pagination_result, status=response_status.HTTP_200_OK)
 
