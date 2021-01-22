@@ -174,6 +174,11 @@ class StuffSerializer(CleanValidateMixin, WritetableFieldPutMethod, DynamicField
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+        request = self.context.get('request')
+
+        if request.method == 'PUT':
+            ret['uuid'] = instance.uuid
+
         ret['quantity'] = instance.quantity_format
         ret['metric_display'] = instance.get_metric_display()
         return ret

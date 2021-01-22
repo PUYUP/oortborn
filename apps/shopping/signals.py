@@ -1,7 +1,9 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from utils.generals import get_model
 
 Purchased = get_model('shopping', 'Purchased')
+PurchasedStuff = get_model('shopping', 'PurchasedStuff')
 Product = get_model('shopping', 'Product')
 ProductRate = get_model('shopping', 'ProductRate')
 OrderLine = get_model('shopping', 'OrderLine')
@@ -132,6 +134,28 @@ def order_line_save_handler(sender, instance, created, **kwargs):
         stuff = instance.stuff
         stuff.quantity = instance.quantity
         stuff.save()
+
+        # create purchased stuff
+        try:
+            purchased = stuff.basket.purchased.get(user_id=instance.customer.id)
+        except ObjectDoesNotExist:
+            purchased = None
+
+        if purchased is not None:
+            defaults = {
+                'price': instance.price,
+                'amount': instance.amount,
+                'quantity': instance.quantity,
+                'metric': instance.metric,
+                'note': instance.note,
+                'location': instance.location,
+                'is_found': instance.is_found,
+                'is_private': instance.is_private,
+            }
+
+            _purchased_stuff, _created = PurchasedStuff.objects \
+                .update_or_create(user=instance.customer, basket=stuff.basket,
+                                  stuff=stuff, purchased=purchased, defaults=defaults)
 
 
 @transaction.atomic

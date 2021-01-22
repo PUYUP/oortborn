@@ -61,7 +61,8 @@ class OrderSerializer(CleanValidateMixin, DynamicFieldsModelSerializer,
     basket_name = serializers.StringRelatedField(many=False, source='basket.name', read_only=True)
     order_schedule = OrderScheduleSerializer(many=False, required=True)
     assign = AssignSerializer(many=False, read_only=True)
-    total_order_line = serializers.IntegerField(read_only=True)
+    count_order_line = serializers.IntegerField(read_only=True)
+    total_amount = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Order

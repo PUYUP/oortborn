@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import viewsets, status as response_status
@@ -33,7 +33,10 @@ class OrderApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet)
             .select_related('customer', 'basket', 'assign', 'assign__assistant',
                             'order_schedule') \
             .filter(customer_id=self.request.user.id) \
-            .annotate(total_order_line=Count('order_line')) \
+            .annotate(
+                count_order_line=Count('order_line'),
+                total_amount=Sum('order_line__amount')
+            ) \
             .order_by('-create_at')
 
         return query
@@ -50,7 +53,10 @@ class OrderApiView(ViewSetGetObjMixin, ViewSetDestroyObjMixin, viewsets.ViewSet)
         )
 
         if status is not None:
-            queryset = queryset.filter(status=status)
+            if status == 'processed':
+                queryset = queryset.exclude(status=DONE)
+            else:
+                queryset = queryset.filter(status=status)
 
         queryset_paginator = _PAGINATOR.paginate_queryset(queryset, request)
         serializer = OrderSerializer(queryset_paginator, many=True, context=context)

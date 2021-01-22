@@ -147,6 +147,13 @@ class AbstractOrderLine(models.Model):
         return self.quantity
 
     def clean(self, *args, **kwargs):
+        if self.is_found:
+            if self.quantity <= 0:
+                raise ValidationError({'quantity': _("Jumlah tidak boleh kurang dari nol")})
+
+            if self.price <= 0:
+                raise ValidationError({'price': _("Harga tidak boleh kurang dari nol")})
+
         return super().clean()
 
     def save(self, *args, **kwargs):
