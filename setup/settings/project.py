@@ -148,9 +148,9 @@ default_app = firebase_admin.initialize_app()
 
 
 # SENDGRID
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_HOST_USER = 'apikey'
+# EMAIL_HOST_PASSWORD = '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'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = False
+# EMAIL_USE_SSL = False
