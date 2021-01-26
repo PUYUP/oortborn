@@ -131,7 +131,7 @@ CACHES = {
 # GMAIL SMTP
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'administrator@primakare.com'
-EMAIL_HOST_PASSWORD = 'indonesia08**' #past the key or password app here
+EMAIL_HOST_PASSWORD = 'vljcwcnznouwiagh' #past the key or password app here
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
