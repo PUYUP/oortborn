@@ -126,3 +126,13 @@ CACHES = {
         'KEY_PREFIX': 'oort_cache'
     }
 }
+
+
+# GMAIL SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'administrator@primakare.com'
+EMAIL_HOST_PASSWORD = 'indonesia08**' #past the key or password app here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'administrator@primakare.com'
