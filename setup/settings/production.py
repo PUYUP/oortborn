@@ -134,5 +134,5 @@ EMAIL_HOST_USER = 'administrator@primakare.com'
 EMAIL_HOST_PASSWORD = 'vljcwcnznouwiagh' #past the key or password app here
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_USE_SSL = True
+EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'administrator@primakare.com'
