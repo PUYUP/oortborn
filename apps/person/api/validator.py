@@ -1,4 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
@@ -6,7 +7,7 @@ from rest_framework import serializers
 from utils.generals import get_model
 from apps.person.utils.constants import REGISTER_VALIDATION
 
-User = get_model('person', 'User')
+User = get_user_model()
 VerifyCode = get_model('person', 'VerifyCode')
 
 

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Prefetch
+from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ObjectDoesNotExist
@@ -29,7 +30,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class AccountListSerializer(serializers.ListSerializer):
     def to_representation(self, value):
-        if value.exists():
+        if isinstance(value, QuerySet) and value.exists():
             value = value.prefetch_related(Prefetch('user')) \
                 .select_related('user')
         return super().to_representation(value)

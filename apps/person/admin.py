@@ -23,11 +23,9 @@ class AccountInline(admin.StackedInline):
 
 
 class UserExtend(UserAdmin):
-    _INLINE_SET = [ProfileInline, AccountInline]
-
     form = UserChangeFormExtend
     add_form = UserCreationFormExtend
-    inlines = _INLINE_SET
+    inlines = [ProfileInline, AccountInline,]
     list_display = ('username', 'first_name', 'email', 'msisdn', 'is_staff')
     fieldsets = (
         (None, {'fields': ('username', 'password', 'email',)}),

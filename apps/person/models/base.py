@@ -14,9 +14,9 @@ class User(AbstractUser):
         app_label = 'person'
 
     @property
-    def is_buyer(self):
+    def is_customer(self):
         return False
 
     @property
-    def is_operator(self):
+    def is_assistant(self):
         return False

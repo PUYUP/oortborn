@@ -1,6 +1,5 @@
 from datetime import timedelta
 from django.contrib.messages import constants as messages
-from firebase_admin import credentials, initialize_app
 import firebase_admin
 
 from .base import *
@@ -11,6 +10,8 @@ APP_NAME = 'Daftar Belanja'
 PROJECT_URL = 'www.daftarbelanja.com'
 PAGINATION_PER_PAGE = 15
 LOGIN_WITH_JWT = True
+RECOVERY_PASSWORD_CHECK_ACCOUNT = True # If true in recovery password need make sure account exist
+BASE_SHIPPING_AMOUNT = 25000
 
 
 # REGISTRATION REQUIREMENTS
@@ -18,9 +19,9 @@ STRICT_EMAIL = False
 STRICT_EMAIL_VERIFIED = False
 STRICT_EMAIL_DUPLICATE = False
 
-STRICT_MSISDN = True
-STRICT_MSISDN_VERIFIED = True
-STRICT_MSISDN_DUPLICATE = True
+STRICT_MSISDN = False
+STRICT_MSISDN_VERIFIED = False
+STRICT_MSISDN_DUPLICATE = False
 
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/person/login/'
@@ -137,10 +138,19 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # REDIS
 REDIS_HOST = '127.0.0.1'
 REDIS_PORT = '6379'
-REDIS_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/1'
+REDIS_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT
 
 
 # Firebase configuration
 FIREBASE_CRED_FILE = '%s/%s' % (PROJECT_PATH, 'firebase-cred.json')
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = FIREBASE_CRED_FILE
 default_app = firebase_admin.initialize_app()
+
+
+# SENDGRID
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_HOST_USER = 'apikey'
+# EMAIL_HOST_PASSWORD = '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'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = False
+# EMAIL_USE_SSL = False

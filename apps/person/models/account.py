@@ -14,7 +14,7 @@ class AbstractAccount(models.Model):
                                 related_name='account')
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     email = models.EmailField(blank=True, null=True)
@@ -53,7 +53,7 @@ class AbstractProfile(models.Model):
                                 related_name='profile')
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     headline = models.CharField(max_length=255, null=True, blank=True)

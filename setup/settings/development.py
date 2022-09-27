@@ -1,6 +1,8 @@
 from .base import *
 from .project import *
 
+from corsheaders.defaults import default_headers
+
 DEBUG = True
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
@@ -56,6 +58,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8100',
 ]
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngsw-bypass',
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # ------------------------------------------------------------------------------
@@ -64,15 +70,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     os.path.join(PROJECT_PATH, 'static/'),
 )
-
-
-# SENDGRID
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
 
 
 CHANNEL_LAYERS = {
@@ -88,7 +85,7 @@ CHANNEL_LAYERS = {
 
 if DEBUG and not IS_UNIX:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('127.0.0.1', '10.0.2.2', 'localhost',)
+    INTERNAL_IPS = ('127.0.0.1', '10.0.2.2', 'localhost' '192.168.1.115',)
     MIDDLEWARE += (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
     )

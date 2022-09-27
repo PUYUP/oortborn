@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import _unicode_ci_compare
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
@@ -11,7 +12,7 @@ from apps.person.utils.constants import VerifyCode_SESSION_FIELDS
 
 validate_username = UnicodeUsernameValidator()
 
-User = get_model('person', 'User')
+User = get_user_model()
 
 
 class CurrentUserDefault:
@@ -84,6 +85,24 @@ def get_users_by_email(email):
         u for u in active_users
         if u.has_usable_password() and
         _unicode_ci_compare(email, getattr(u, email_field_name))
+    )
+
+
+def get_users_by_username(username):
+    """Given an username, return matching user(s) who should receive a reset.
+    This allows subclasses to more easily customize the default policies
+    that prevent inactive users and users with unusable passwords from
+    resetting their password.
+    """
+    username_field_name = 'username'
+    active_users = User._default_manager.filter(**{
+        '%s__iexact' % username_field_name: username,
+        'is_active': True,
+    })
+    return (
+        u for u in active_users
+        if u.has_usable_password() and
+        _unicode_ci_compare(username, getattr(u, username_field_name))
     )
 
 

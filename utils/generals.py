@@ -1,3 +1,4 @@
+import math
 import uuid
 import json
 import random
@@ -90,3 +91,14 @@ def create_unique_id(length=8):
 def choices_to_json(choices):
     to_dict = dict(choices)
     return json.dumps(to_dict, cls=LazyEncoder)
+
+
+def quantity_format(quantity):
+    frac, whole = math.modf(quantity)
+    quantity_fmt = frac + whole
+
+    if (quantity_fmt % 1 > 0):
+        quantity = quantity_fmt
+    else:
+        quantity = int(quantity_fmt)
+    return quantity

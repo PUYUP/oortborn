@@ -2,6 +2,10 @@ from .master import *
 from .basket import *
 from .purchased import *
 from .circle import *
+from .order import *
+from .invoice import *
+from .assign import *
+from .shipping import *
 
 from utils.generals import is_model_registered
 
@@ -9,6 +13,15 @@ __all__ = list()
 
 
 # 1
+if not is_model_registered('shopping', 'Category'):
+    class Category(AbstractCategory):
+        class Meta(AbstractCategory.Meta):
+            db_table = 'shopping_category'
+
+    __all__.append('Category')
+
+
+# 2
 if not is_model_registered('shopping', 'Brand'):
     class Brand(AbstractBrand):
         class Meta(AbstractBrand.Meta):
@@ -17,7 +30,7 @@ if not is_model_registered('shopping', 'Brand'):
     __all__.append('Brand')
 
 
-# 2
+# 3
 if not is_model_registered('shopping', 'Product'):
     class Product(AbstractProduct):
         class Meta(AbstractProduct.Meta):
@@ -26,7 +39,16 @@ if not is_model_registered('shopping', 'Product'):
     __all__.append('Product')
 
 
-# 3
+# 4
+if not is_model_registered('shopping', 'ProductMetric'):
+    class ProductMetric(AbstractProductMetric):
+        class Meta(AbstractProductMetric.Meta):
+            db_table = 'shopping_product_metric'
+
+    __all__.append('ProductMetric')
+
+
+# 5
 if not is_model_registered('shopping', 'ProductRate'):
     class ProductRate(AbstractProductRate):
         class Meta(AbstractProductRate.Meta):
@@ -35,7 +57,7 @@ if not is_model_registered('shopping', 'ProductRate'):
     __all__.append('ProductRate')
 
 
-# 4
+# 6
 if not is_model_registered('shopping', 'ProductAttachment'):
     class ProductAttachment(AbstractProductAttachment):
         class Meta(AbstractProductAttachment.Meta):
@@ -44,7 +66,7 @@ if not is_model_registered('shopping', 'ProductAttachment'):
     __all__.append('ProductAttachment')
 
 
-# 5
+# 7
 if not is_model_registered('shopping', 'Basket'):
     class Basket(AbstractBasket):
         class Meta(AbstractBasket.Meta):
@@ -53,7 +75,7 @@ if not is_model_registered('shopping', 'Basket'):
     __all__.append('Basket')
 
 
-# 6
+# 8
 if not is_model_registered('shopping', 'BasketAttachment'):
     class BasketAttachment(AbstractBasketAttachment):
         class Meta(AbstractBasketAttachment.Meta):
@@ -62,7 +84,7 @@ if not is_model_registered('shopping', 'BasketAttachment'):
     __all__.append('BasketAttachment')
 
 
-# 7
+# 9
 if not is_model_registered('shopping', 'Stuff'):
     class Stuff(AbstractStuff):
         class Meta(AbstractStuff.Meta):
@@ -71,7 +93,7 @@ if not is_model_registered('shopping', 'Stuff'):
     __all__.append('Stuff')
 
 
-# 8
+# 10
 if not is_model_registered('shopping', 'StuffAttachment'):
     class StuffAttachment(AbstractStuffAttachment):
         class Meta(AbstractStuffAttachment.Meta):
@@ -80,7 +102,7 @@ if not is_model_registered('shopping', 'StuffAttachment'):
     __all__.append('StuffAttachment')
 
 
-# 9
+# 11
 if not is_model_registered('shopping', 'Share'):
     class Share(AbstractShare):
         class Meta(AbstractShare.Meta):
@@ -89,7 +111,7 @@ if not is_model_registered('shopping', 'Share'):
     __all__.append('Share')
 
 
-# 10
+# 12
 if not is_model_registered('shopping', 'Purchased'):
     class Purchased(AbstractPurchased):
         class Meta(AbstractPurchased.Meta):
@@ -98,7 +120,7 @@ if not is_model_registered('shopping', 'Purchased'):
     __all__.append('Purchased')
 
 
-# 11
+# 13
 if not is_model_registered('shopping', 'PurchasedStuff'):
     class PurchasedStuff(AbstractPurchasedStuff):
         class Meta(AbstractPurchasedStuff.Meta):
@@ -107,16 +129,16 @@ if not is_model_registered('shopping', 'PurchasedStuff'):
     __all__.append('PurchasedStuff')
 
 
-# 12
-if not is_model_registered('shopping', 'TrackLocation'):
-    class TrackLocation(AbstractTrackLocation):
-        class Meta(AbstractTrackLocation.Meta):
-            db_table = 'shopping_track_location'
+# 14
+if not is_model_registered('shopping', 'PurchasedStuffAttachment'):
+    class PurchasedStuffAttachment(AbstractPurchasedStuffAttachment):
+        class Meta(AbstractPurchasedStuffAttachment.Meta):
+            db_table = 'shopping_purchased_stuff_attachment'
 
-    __all__.append('TrackLocation')
+    __all__.append('PurchasedStuffAttachment')
 
 
-# 13
+# 15
 if not is_model_registered('shopping', 'Schedule'):
     class Schedule(AbstractSchedule):
         class Meta(AbstractSchedule.Meta):
@@ -125,7 +147,7 @@ if not is_model_registered('shopping', 'Schedule'):
     __all__.append('Schedule')
 
 
-# 14
+# 16
 if not is_model_registered('shopping', 'Circle'):
     class Circle(AbstractCircle):
         class Meta(AbstractCircle.Meta):
@@ -134,10 +156,109 @@ if not is_model_registered('shopping', 'Circle'):
     __all__.append('Circle')
 
 
-# 15
+# 17
 if not is_model_registered('shopping', 'CircleMember'):
     class CircleMember(AbstractCircleMember):
         class Meta(AbstractCircleMember.Meta):
             db_table = 'shopping_circle_member'
 
     __all__.append('CircleMember')
+
+
+# 18
+if not is_model_registered('shopping', 'Order'):
+    class Order(AbstractOrder):
+        class Meta(AbstractOrder.Meta):
+            db_table = 'shopping_order'
+
+    __all__.append('Order')
+
+
+# 19
+if not is_model_registered('shopping', 'OrderLine'):
+    class OrderLine(AbstractOrderLine):
+        class Meta(AbstractOrderLine.Meta):
+            db_table = 'shopping_order_line'
+
+    __all__.append('OrderLine')
+
+
+# 20
+if not is_model_registered('shopping', 'OrderSchedule'):
+    class OrderSchedule(AbstractOrderSchedule):
+        class Meta(AbstractOrderSchedule.Meta):
+            db_table = 'shopping_order_schedule'
+
+    __all__.append('OrderSchedule')
+
+
+# 21
+if not is_model_registered('shopping', 'OrderDelivery'):
+    class OrderDelivery(AbstractOrderDelivery):
+        class Meta(AbstractOrderDelivery.Meta):
+            db_table = 'shopping_order_delivery'
+
+    __all__.append('OrderDelivery')
+
+
+# 22
+if not is_model_registered('shopping', 'Invoice'):
+    class Invoice(AbstractInvoice):
+        class Meta(AbstractInvoice.Meta):
+            db_table = 'shopping_invoice'
+
+    __all__.append('Invoice')
+
+
+# 23
+if not is_model_registered('shopping', 'InvoiceLine'):
+    class InvoiceLine(AbstractInvoiceLine):
+        class Meta(AbstractInvoiceLine.Meta):
+            db_table = 'shopping_invoice_line'
+
+    __all__.append('InvoiceLine')
+
+
+# 24
+if not is_model_registered('shopping', 'ShippingAddress'):
+    class ShippingAddress(AbstractShippingAddress):
+        class Meta(AbstractShippingAddress.Meta):
+            db_table = 'shopping_shipping_address'
+
+    __all__.append('ShippingAddress')
+
+
+# 25
+if not is_model_registered('shopping', 'ShippingMethod'):
+    class ShippingMethod(AbstractShippingMethod):
+        class Meta(AbstractShippingMethod.Meta):
+            db_table = 'shopping_shipping_method'
+
+    __all__.append('ShippingMethod')
+
+
+# 26
+if not is_model_registered('shopping', 'Assign'):
+    class Assign(AbstractAssign):
+        class Meta(AbstractAssign.Meta):
+            db_table = 'shopping_assign'
+
+    __all__.append('Assign')
+
+
+# 27
+if not is_model_registered('shopping', 'AssignTracking'):
+    class AssignTracking(AbstractAssignTracking):
+        class Meta(AbstractAssignTracking.Meta):
+            db_table = 'shopping_assign_tracking'
+
+    __all__.append('AssignTracking')
+
+
+# 28
+if not is_model_registered('shopping', 'AssignLog'):
+    class AssignLog(AbstractAssignLog):
+        class Meta(AbstractAssignLog.Meta):
+            db_table = 'shopping_assign_log'
+
+    __all__.append('AssignLog')

@@ -2,7 +2,9 @@ from .base import *
 from .project import *
 
 import sentry_sdk
+
 from sentry_sdk.integrations.django import DjangoIntegration
+from corsheaders.defaults import default_headers
 
 DEBUG = False
 ALLOWED_HOSTS = [
@@ -11,12 +13,13 @@ ALLOWED_HOSTS = [
     '[::1]', 
     '192.168.1.115',
     'api.daftarbelanja.com',
+    'app.daftarbelanja.com',
 ]
 
 
 # SENTRY
 sentry_sdk.init(
-    dsn="https://fc8ad650d89f42a0be005a19b401449a@o400235.ingest.sentry.io/5419903",
+    dsn="https://03b90e71d21646688b3c26fc13c9de50@o400235.ingest.sentry.io/5570476",
     integrations=[DjangoIntegration()],
     traces_sample_rate=1.0,
 
@@ -51,6 +54,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
+    'daftar-belanja-001.firebaseapp.com',
     '.daftarbelanja.com'
 ]
 
@@ -62,7 +66,13 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',
-    'https://api.daftarbelanja.com',
+    'http://localhost:8100',
+    'https://app.daftarbelanja.com',
+    'https://daftar-belanja-001.firebaseapp.com',
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngsw-bypass',
 ]
 
 
@@ -125,3 +135,12 @@ CACHES = {
         'KEY_PREFIX': 'oort_cache'
     }
 }
+
+
+# GMAIL SMTP
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'hellopuyup@gmail.com'
+EMAIL_HOST_PASSWORD = 'ind0nesi@' #past the key or password app here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

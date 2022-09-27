@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import transaction, IntegrityError
 from django.db.models import Prefetch
 from django.contrib import messages
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
@@ -60,7 +60,7 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ListSerializer):
     def to_representation(self, value):
-        if isinstance(value, QuerySet):
+        if isinstance(value, QuerySet) and value.exists():
             value = value.prefetch_related(Prefetch('topic'))
         return super().to_representation(value)
 
@@ -161,7 +161,7 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
 
             # generate email if None
             if self.email is None:
-                data['email'] = '{}{}@daftarbelanja.com'.format(create_unique_id(2), slugify(self.msisdn))
+                data['email'] = '{}{}@daftarbelanja.com'.format(create_unique_id(2), slugify(self.username))
 
             # insert msisdn
             if self.msisdn:
@@ -220,25 +220,27 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
 
     def validate_password(self, value):
         instance = getattr(self, 'instance', dict())
+
+        # make sure password filled
+        if not self.password1 or not self.password2:
+            raise serializers.ValidationError(_(u"Password tidak boleh kosong"))
+        
+        if self.password1 != self.password2:
+            raise serializers.ValidationError(_(u"Password tidak sama"))
+
+        try:
+            validate_password(self.password2)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        
+        # change password, instance = user object
         if instance:
             username = getattr(instance, 'username', None)
-
-            # make sure new and old password filled
-            if not self.password1 or not self.password2:
-                raise serializers.ValidationError(_(u"Kata sandi lama dan baru wajib"))
-            
-            if self.password1 != self.password2:
-                raise serializers.ValidationError(_(u"Kata sandi lama dan baru tidak sama"))
-
-            try:
-                validate_password(self.password2)
-            except ValidationError as e:
-                raise serializers.ValidationError(e.messages)
 
             # check current password is passed
             passed = authenticate(username=username, password=self.password)
             if passed is None:
-                raise serializers.ValidationError(_(u"Kata sandi lama salah"))
+                raise serializers.ValidationError(_(u"Password lama salah"))
             return self.password2
         return value
 
@@ -249,7 +251,7 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
         msisdn = validated_data.pop('msisdn', None)
 
         try:
-            user = User.objects.create_user(**validated_data)
+            user = get_user_model().objects.create_user(**validated_data)
         except IntegrityError as e:
             raise ValidationError(str(e))
         except TypeError as e:
@@ -291,8 +293,8 @@ class UserSerializer(DynamicFieldsModelSerializer, serializers.ModelSerializer):
                     instance.set_password(value)
 
                     # add flash message
-                    messages.success(request, _("Kata sandi berhasil dirubah."
-                                                " Login dengan kata sandi baru Anda"))
+                    messages.success(request, _("Password berhasil dirubah."
+                                                " Login dengan password baru Anda"))
                 else:
                     old_value = getattr(instance, key, None)
                     if old_value != value:

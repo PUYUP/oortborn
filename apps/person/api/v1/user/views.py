@@ -10,7 +10,7 @@ from django.core.exceptions import (
     MultipleObjectsReturned
 )
 from django.views.decorators.cache import never_cache
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.core.validators import validate_email
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
@@ -40,7 +40,7 @@ from apps.person.utils.permissions import IsCurrentUserOrReject
 from apps.person.utils.auth import validate_username
 from apps.person.utils.constants import PASSWORD_RECOVERY
 
-User = get_model('person', 'User')
+User = get_user_model()
 Account = get_model('person', 'Account')
 Profile = get_model('person', 'Profile')
 VerifyCode = get_model('person', 'VerifyCode')
@@ -73,7 +73,7 @@ class UserApiView(viewsets.ViewSet):
     lookup_field = 'uuid'
     permission_classes = (AllowAny,)
     permission_action = {
-        # 'list': [IsAuthenticated],
+        'list': [IsAuthenticated],
         'retrieve': [IsAuthenticated],
         'partial_update': [IsAuthenticated, IsCurrentUserOrReject],
     }
@@ -428,6 +428,8 @@ class UserApiView(viewsets.ViewSet):
         Param:
 
             {
+                "email": "string",
+                "msisdn": "string",
                 "token": "string",
                 "password1": "string",
                 "password2": "string",
@@ -444,15 +446,18 @@ class UserApiView(viewsets.ViewSet):
         recovery_uidb64 = request.data.get('recovery_uidb64')
         recovery_token = request.data.get('recovery_token')
 
+        self.verifycode_email = request.data.get('email')
+        self.verifycode_msisdn = request.data.get('msisdn')
+
         if not password1 or not password2 or not recovery_uidb64 or not recovery_token:
             raise NotAcceptable(detail=_(u"Parameter tidak lengkap"))
 
         # check password confirmation
         if password1 and password2:
             if password1 != password2:
-                raise NotAcceptable(detail=_(u"Kata sandi tidak sama"))
+                raise NotAcceptable(detail=_(u"Password tidak sama"))
         else:
-            raise NotAcceptable(detail=_(u"Kata sandi tidak boleh kosong"))
+            raise NotAcceptable(detail=_(u"Password tidak boleh kosong"))
 
         # validate password
         try:
@@ -462,13 +467,12 @@ class UserApiView(viewsets.ViewSet):
 
         # check password recovery valid or not
         uid = urlsafe_base64_decode(recovery_uidb64).decode()
+
         try:
             user = User._default_manager.get(pk=uid)
-            self.verifycode_email = user.email
-            self.verifycode_msisdn = user.account.msisdn
         except ObjectDoesNotExist:
             raise NotAcceptable(detail=_(u"Akun tidak ditemukan"))
-
+        
         isvalid = default_token_generator.check_token(user, recovery_token)
         if not isvalid:
             raise NotAcceptable(detail=_(u"Token invalid"))
@@ -483,8 +487,8 @@ class UserApiView(viewsets.ViewSet):
         user.set_password(password2)
         user.save()
 
-        return Response({'detail': _(u"Kata sandi berhasil diperbarui. "
-                                     "Silahkan masuk dengan kata sandi baru")},
+        return Response({'detail': _(u"Password berhasil diperbarui. "
+                                     "Silahkan masuk dengan password baru")},
                         status=response_status.HTTP_200_OK)
 
     # Change password
@@ -514,9 +518,9 @@ class UserApiView(viewsets.ViewSet):
         # check password confirmation
         if password1 and password2:
             if password1 != password2:
-                raise NotAcceptable(detail=_(u"Kata sandi tidak sama"))
+                raise NotAcceptable(detail=_(u"Password tidak sama"))
         else:
-            raise NotAcceptable(detail=_(u"Kata sandi tidak boleh kosong"))
+            raise NotAcceptable(detail=_(u"Password tidak boleh kosong"))
 
         # validate password
         try:
@@ -526,14 +530,14 @@ class UserApiView(viewsets.ViewSet):
 
         # check current password
         if not user.check_password(password):
-            raise NotAcceptable(detail=_("Kata sandi lama salah"))
+            raise NotAcceptable(detail=_("Password lama salah"))
 
         # set password
         user.set_password(password2)
         user.save()
 
-        return Response({'detail': _(u"Kata sandi berhasil diperbarui. "
-                                     "Silahkan masuk dengan kata sandi baru")},
+        return Response({'detail': _(u"Password berhasil diperbarui. "
+                                     "Silahkan masuk dengan password baru")},
                         status=response_status.HTTP_200_OK)
 
     # Sub-action logout!
@@ -543,7 +547,7 @@ class UserApiView(viewsets.ViewSet):
             url_path='logout', url_name='logout')
     def logout(self, request, uuid=None):
         logout(request)
-        return Response({'detail': _(u"Logout!")}, status=response_status.HTTP_204_NO_CONTENT)
+        return Response({'detail': _(u"Logout!")}, status=response_status.HTTP_200_OK)
 
 
 class TokenObtainPairSerializerExtend(TokenObtainPairSerializer):

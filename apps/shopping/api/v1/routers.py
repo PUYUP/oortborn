@@ -1,9 +1,9 @@
 from django.urls import path, include
 
-from .buyer import routers as buyer_routers
+from .customer import routers as customer_routers
 from .master import routers as master_routers
 
 urlpatterns = [
-    path('buyer/', include((buyer_routers, 'buyer'))),
+    path('customer/', include((customer_routers, 'customer'))),
     path('master/', include((master_routers, 'master'))),
 ]

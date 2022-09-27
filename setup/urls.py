@@ -18,6 +18,8 @@ urlpatterns += static(settings.STATIC_URL,
 # Remove admin sidebar nav sidebar
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#django.contrib.admin.AdminSite.enable_nav_sidebar
 admin.site.enable_nav_sidebar = False
+admin.site.site_header = settings.APP_NAME + ' Panel'
+admin.site.site_title = settings.APP_NAME + ' Panel'
 
 if settings.DEBUG and not settings.IS_UNIX:
     import debug_toolbar

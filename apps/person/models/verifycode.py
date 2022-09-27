@@ -7,6 +7,7 @@ from django.db.models import Q, Prefetch, Case, When, Value
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import RegexValidator, ValidationError, validate_email
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 from utils.generals import get_model
 from utils.validators import non_python_keyword
@@ -17,7 +18,7 @@ from apps.person.utils.constants import (
     REGISTER_VALIDATION
 )
 
-User = get_model('person', 'User')
+User = get_user_model()
 
 
 class VerifyCodeQuerySet(models.query.QuerySet):
@@ -77,7 +78,7 @@ class AbstractVerifyCode(models.Model):
                              null=True, blank=True, related_name='verifycode')
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    create_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True, db_index=True)
     update_at = models.DateTimeField(auto_now=True)
 
     # part from user
@@ -119,9 +120,17 @@ class AbstractVerifyCode(models.Model):
 
     def clean(self, *args, **kwargs):
         if not self.pk and not self.user:
+            # request object get from clean method
+            request = kwargs.pop('request', {})
+
+            # username outside this model
+            # some reason user need recovery password and don't have valid account email
+            # eg; email auto-generate by system
+            # so for that we get user by username
+            username = request.data.get('username') if request else None
             user_query = User.objects \
-                .prefetch_related(Prefetch('account')) \
-                .select_related('account')
+                .prefetch_related(Prefetch('account', 'profile')) \
+                .select_related('account', 'profile')
 
             if self.email:
                 # check format email valid or not
@@ -139,15 +148,20 @@ class AbstractVerifyCode(models.Model):
                         )
 
             # Reset password make sure account exist
-            if self.challenge == PASSWORD_RECOVERY:
+            if self.challenge == PASSWORD_RECOVERY and settings.RECOVERY_PASSWORD_CHECK_ACCOUNT:
                 user_query = user_query.filter(
                     Q(email=Case(When(email__isnull=False, then=Value(self.email))))
+                    | Q(username=Case(When(username__isnull=False, then=Value(username))))
                     | Q(account__msisdn=Case(When(account__msisdn__isnull=False, then=Value(self.msisdn)))))
 
                 if not user_query.exists():
                     error_key = 'email'
+    
                     if self.msisdn:
                         error_key = 'msisdn'
+
+                    if username:
+                        error_key = 'username'
 
                     raise ValidationError({error_key: _(u"Akun tidak ditemukan")})
 
@@ -155,6 +169,8 @@ class AbstractVerifyCode(models.Model):
                 raise ValidationError(
                     {'challenge': _(u"%s is not a valid choice." % self.get_challenge_display())}
                 )
+                
+        return super().clean()
 
     def validate(self):
         if self.is_used:
